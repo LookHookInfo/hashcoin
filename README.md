@@ -1,4 +1,8 @@
-## Meme HASH Readme v1.0
+## Meme HASH Readme v1.1
+
+Developer LookHook Dev (Saken Zhuma)
+https://lookhook.info
+
 Overview:
 Meme HASH is an innovative project aimed at enhancing the attractiveness and uniqueness of cryptocurrency tokens through the utilization of memes and Non-Fungible Tokens (NFTs). By integrating meme culture with blockchain technology, Meme HASH offers users the opportunity to participate in a novel and engaging ecosystem where meme creation and NFT staking contribute to token rewards and community interaction.
 Website - https://hashcoin.farm
