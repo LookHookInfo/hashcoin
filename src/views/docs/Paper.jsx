@@ -44,7 +44,7 @@ function GridLineOne(){
       <p className="py-2 pt-3 font-semibold">Contract Information</p>
       <p>Participants interact with the following contracts:</p>
          <ul className="list-disc px-8 py-4">
-            <li className="py-2"><b>NFT Contract: </b><span className="break-all">0x3ACCCbCDfd1ed5C4fb926c9AFFD619E546f3a95D</span></li>
+            <li className="py-2"><b>NFT Contract: </b><span className="break-all">0x37902C894F1b95F2fAC33b3680E653827F1Dc69d</span></li>
             <li className="py-2"><b>Inventory Contract: </b> <span className="break-all">0x13CE10a3e09FA8000BA8A13fCbe8813f476584e7</span></li>
             <li className="py-2"><b>Rewards Contract: </b><span className="break-all">0xA9B631ABcc4fd0bc766d7C0C8fCbf866e2bB0445</span></li>
             <li className="py-2"><b>Staking Contract: </b><span className="break-all">0xBBc4f75874930EB4d8075FCB3f48af2535A8E848</span></li>
