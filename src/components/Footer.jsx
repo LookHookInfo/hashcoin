@@ -56,7 +56,7 @@ function Logo(){
    return <div className='flex flex-col mx-auto content-center'>
        <img className='mx-auto border border-gray-600 rounded-full mb-1' src={logo} width='54px' />
        <div className='mb-4 text-center'>
-          <span className='text-xs leading-none'>Maining</span><br />
+          <span className='text-xs leading-none'>Mining</span><br />
           <span className='font-bold text-xl pt-0 mt-0 leading-none'>Hash</span>
        </div>
    </div>

@@ -14,7 +14,7 @@ function Intro(){
     rounded-xl p-3 bg-white' style={{ maxWidth: '240px' }}>
        <img className='border border-black rounded-full mb-1 mt-4' src={logo} width='54px' />
        <div className='db text-center'>
-          <span className='text-xs leading-none'>Maining</span><br />
+          <span className='text-xs leading-none'>Mining</span><br />
           <span className='font-bold text-xl pt-0 mt-0 leading-none'>Hash</span>
        </div>
        <div className='py-2'>

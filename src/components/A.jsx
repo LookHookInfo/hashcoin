@@ -18,7 +18,7 @@ function AppLogo(){
          <img className='border rounded-full mr-2 border-gray-600'
          src={ImgLogo} alt='Logo' width='48px' />
          <span className='text-white pt-1'>
-            <span className='block text-xs leading-none'>Maining</span>
+            <span className='block text-xs leading-none'>Mining</span>
             <span className='block font-bold text-xl'>Hash</span>
          </span>
       </div>
