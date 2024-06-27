@@ -18,11 +18,11 @@ export default function Footer(){
 
 function MetaMask(){
    return (<div className='p-5'>
-      <img src={metamask} className='-my-12' />
-      <span className='block text-sm text-center my-3 lg:my-1'>
+      <img src={metamask} className='-my-5' />
+      <span className='block text-sm text-center my-33 lg:my-11'>
       <a className='text-blue-300 hover:text-blue-400'
-      href='https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn?hl=en'
-      target='_blank'>MetaMask Chrome</a> extension is a critical tool for anyone looking to engage with the web 3.0.
+      href='https://www.base.org/ecosystem'
+      target='_blank'>Base Network,</a> developed by Coinbase, enhances Ethereum's scalability and reduces transaction costs, supporting a wide range of decentralized applications.
       </span>
    </div>)
 }
