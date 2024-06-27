@@ -43,9 +43,9 @@ function GridLineOne(){
          <H3 title="Aggregators" />
          <ul className="list-disc px-8 py-4">
             <li className="py-2"><b>GeckoTerminal (<a className="text-blue-400 hover:text-blue-500" target="_blank"
-            href="https://www.geckoterminal.com">Hash/DAI</a>)</b></li>
+            href="https://www.geckoterminal.com/base/pools/0x9ab05414f0a3872a78459693f3e3c9ea3f0d6e71">Hash/USDC</a>)</b></li>
             <li className="py-2"><b>DexTools (<a target="_blank" className="text-blue-400 hover:text-blue-500"
-            href="https://www.geckoterminal.com">Hash/DAI</a>)</b></li>
+            href="https://www.dextools.io/app/en/base/pair-explorer/0x9ab05414f0a3872a78459693f3e3c9ea3f0d6e71">Hash/USDC</a>)</b></li>
          </ul>
       </Div>
    </div>)

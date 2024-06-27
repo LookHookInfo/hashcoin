@@ -50,9 +50,9 @@ function GridLineOne(){
       <Div>
       <H3 title="Hash Coin Mining" />
       <p className="font-bold">Project description:</p>
-      <p className="py-2">Hash is a unique project that combines the world of memes and cryptocurrencies.
-         Users can acquire various types of NFTs and stake them to earn Hash tokens as rewards.
-         <br /><br />NFT staking opens up new opportunities for increasing productivity, efficiency, and profitability in the mining world.</p>
+      <p className="py-2">Hash is a unique project that showcases the potential of cryptocurrency mining through NFT staking.
+      Users can purchase special types of NFTs and use them to earn Hash tokens as rewards.
+         <br /><br />Utilizing NFT inventory opens new horizons for enhancing productivity, efficiency, and profitability in the mining world.</p>
       <br />
       <p className="font-bold py2">Links:</p>
       <ul className="list-disc px-8 pt-2">
