@@ -18,7 +18,6 @@ export default function Footer(){
 
 function MetaMask(){
    return (<div className='p-5'>
-      <img src={metamask} className='-my-5' />
       <span className='block text-sm text-center my-33 lg:my-11'>
       <a className='text-blue-300 hover:text-blue-400'
       href='https://www.base.org/ecosystem'
@@ -32,7 +31,7 @@ function AboutApp(){
    return (<div className='p-5'>
       <Logo />
       <span className='block text-sm text-center'>
-      Hash is a unique project that combines the world of memes and crypto currencies.
+      Become an NFT inventory owner and unlock the world of crypto mining!
       </span>
    </div>)
 }
