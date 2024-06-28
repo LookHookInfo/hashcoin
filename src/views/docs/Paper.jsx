@@ -80,7 +80,7 @@ function GridLineTwo(){
          <li className="py-2"><b>Universal Participation:</b> Anyone can participate in our ecosystem without regional restrictions.</li>
          <li className="py-2"><b>Initiation:</b> To start mining HASH tokens, a participant must create an NFT-space (registration). This minting process is free except for gas fees and is performed once per participant account. Afterward, participants can purchase NFT inventory for HASH token mining through staking.
          <br /><br />Participants have the right to exit staking and claim rewards at any time, considering the token balance in the pool. Rewards are distributed by the contract <span className="break-all">(0xBBc4f75874930EB4d8075FCB3f48af2535A8E848)</span> on a first-come, first-served basis.</li>
-         <li className="py-2"><b>Flexibility of Staking:</b> Participants can withdraw NFTs from staking and list them for sale on the OTC NFT market if they decide to cease token mining.</li>
+         <li className="py-2"><b>Flexibility of Staking:</b> Participants can withdraw NFTs from staking and list them for sale on the SEA NFT market if they decide to cease token mining.</li>
          </ul>
       </Div>
    </div>)

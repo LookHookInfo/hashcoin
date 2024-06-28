@@ -61,7 +61,7 @@ function GridLineTwo(){
          <ul className="list-disc px-8 py-4">
          <li className="py-2"><b>CEX Listing:</b> Listing the HASH token on centralized exchanges for seamless asset trading.</li>
          <li className="py-2"><b>Launch of Quests and Tasks:</b> Introducing interactive quests and tasks on platforms like Guild, Galxe, and Zealy.</li>
-         <li className="py-2"><b>OTC Inventory Market:</b> Creating an over-the-counter market for trading inventory.</li>
+         <li className="py-2"><b>SEA Inventory Market:</b> Creating an over-the-counter market for trading inventory.</li>
          <li className="py-2"><b>NFT Collection of our #Tag:</b> Launching a unique NFT collection.</li>
          <li className="py-2"><b>Implementation of Mining in Other Networks:</b> To expand capabilities and interact with communities across different networks, the team has allocated 4b HASH tokens for mining implementation in another network.</li>
          <li className="py-2"><b>Airdrop for the Community:</b> Conducting an airdrop to reward active community members, liquidity providers, inventory holders, and whitelist participants.</li>
