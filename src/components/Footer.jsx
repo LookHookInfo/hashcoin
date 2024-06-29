@@ -72,7 +72,7 @@ function QuickLinks(){
    <a href='https://lookhook.info' target='_blank'>Team</a></li>
 <li className='px-3 hover:text-blue-300'>
    <a href='https://opensea.io/collection/farm-inventory'
-   target='_blank'>SEA</a></li>
+   target='_blank'>Sea</a></li>
 <li className='px-3 hover:text-blue-300'>
    <a href='/'>Invest</a></li>
 </ul>
