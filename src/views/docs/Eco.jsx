@@ -54,12 +54,20 @@ function GridLineOne(){
 function GridLineTwo(){
    return(<div className='grid sm:grid-cols-2 gap-5 mb-8 mt-2'>
       <Div>
-         <H3 title="Media" />
-         <p className="py-2">Media</p>
+      <H3 title="Quests and rewards" />
+         <ul className="list-disc px-8 py-4">
+            <li className="py-2"><b>Activity (<a className="text-blue-400 hover:text-blue-500" target="_blank"
+            href="https://guild.xyz/hashcoin">Guild</a>)</b></li>
+            <li className="py-2"><b>Activity (<a target="_blank" className="text-blue-400 hover:text-blue-500"
+            href="https://zealy.io/cw/hashcoin">Zealy</a>)</b></li>
+         </ul>
       </Div>
       <Div>
-      <H3 title="DEX #hash" />
-         <p className="py-2">DEX</p>
+      <H3 title="DEX" />
+         <ul className="list-disc px-8 py-4">
+            <li className="py-2"><b>Uniswap (<a className="text-blue-400 hover:text-blue-500" target="_blank"
+            href="https://app.uniswap.org/">Hash/USDC</a>)</b></li>
+         </ul>
       </Div>
    </div>)
 }
