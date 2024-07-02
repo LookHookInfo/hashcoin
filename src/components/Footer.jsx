@@ -43,7 +43,7 @@ function SocialLinks(){
             <li className='p-2'><a href="https://twitter.com/HashCoinFarm" target="_blank"><BrandTwitter /></a></li>
             <li className='p-2'><a href="https://discord.com/invite/D55sWhNgcb" target="_blank"><BrandDiscord /></a></li>
             <li className='p-2'><a href="https://t.me/ChainInside/524" target="_blank"><BrandTelegram /></a></li>
-            <li className='p-2'><a href="https://github.com/LookHookInfo" target="_blank"><BrandGithub width={10} /></a></li>
+            <li className='p-2'><a href="https://github.com/LookHookInfo/hashcoin" target="_blank"><BrandGithub width={10} /></a></li>
          </ul>
          <span className='text-sm'>© 2024 All rights reserved.</span>
       </div>
