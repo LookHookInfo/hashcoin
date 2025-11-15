@@ -1,0 +1,76 @@
+Mining Hash - White Paper
+Official document on ecosystem architecture, tokenomics, and NFT-based mining
+
+Introduction
+Mining Hash is a “green” Web3 mining ecosystem where the $HASH token is generated not through computational power, but through NFT inventory and user activity.
+Developed by Look Hook Dev, a Web3-focused team building decentralized products since 2023, Mining Hash aims to make mining:
+•	Accessible
+•	Environmentally friendly
+•	Fair
+•	Sustainable
+The project features no presales, no VC allocation, and no hidden emissions, ensuring a transparent, community-oriented distribution model.
+
+Architecture and Smart Contracts
+Mining Hash runs on the Base network (Ethereum L2).
+Key contracts:
+Contract	Purpose	Address
+Inventory Contract	NFT devices	0x13CE10a3e09FA8000BA8A13fCbe8813f476584e7
+Rewards Contract	$HASHcoin distribution	0xA9B631ABcc4fd0bc766d7C0C8fCbf866e2bB0445
+Staking Contract	NFT staking & mining	0xBBc4f75874930EB4d8075FCB3f48af2535A8E848
+All contracts are fully open-source and verifiable on-chain.
+
+$HASH Tokenomics
+•	Total supply: 10,000,000,000 $HASH
+•	Distribution is fixed and permanently locked in smart contracts
+Allocation	Share	Purpose
+Mining	80%	NFT-based mining rewards
+Ecosystem Development	20%	Campaigns, Dev, liquidity, partnerships
+No private sales, no VCs, no presales - distribution is based solely on mining and ecosystem activity.
+
+NFT Mining Mechanics
+Mining is performed by staking NFT devices of varying tiers.
+NFT	Price	Mining Speed
+GPU	$1.99	0.042 HASH/hr
+ASIC	$9.50	0.42 HASH/hr
+FARM	$29.20	2.42 HASH/hr
+RIG	$14.99	0.335 HASH/hr
+RACK	$109.50	5.05 HASH/hr
+CONTAINER	$290	24.2 HASH/hr
+Mining Process:
+1.	Acquire NFT equipment
+2.	Stake inside the DApp
+3.	Earn $HASH rewards in real time
+Users can withdraw NFTs, stop mining, sell equipment, or claim rewards at any time.
+
+Revenue Model From NFT Sales
+All revenue from NFT sales goes directly to the team’s operational address and is used exclusively for executing the public roadmap, including:
+•	Product development & maintenance
+•	Liquidity support
+•	Creation of new DApps
+•	Infrastructure & backend services
+•	User incentives and quests
+•	Marketing & ecosystem growth
+•	Operational expenses
+Funds are fully transparent on-chain and not distributed to outside investors.
+
+Mining Hash Ecosystem
+Mining Hash is part of the Look Hook Ecosystem, which includes:
+•	NFT collections & claim pages
+•	Lock-staking & mining contracts
+•	DApps: Name Service, Hash Market, DeVote
+•	Community integrations: Guild, Intract, Galxe
+•	Media partnerships: creators & crypto publishers
+•	Hook Capital: on-chain transparent reserve fund
+Each product adds utility and strengthens $HASH token value.
+
+Security and Transparency Principles
+•	Fully open smart contracts
+•	Fixed tokenomics
+•	No presale or private allocation
+•	No hidden emissions or mint functions
+•	On-chain reserves & revenue flows
+•	Fair distribution through mining & activity
+
+Conclusion
+Mining Hash introduces a new era of Web3 mining - accessible, eco - friendly, transparent, and sustainable.
+The ecosystem is built to grow, expand utilities, and remain relevant long - term. Partnerships, integrations, and CEX listings are actively welcome.
