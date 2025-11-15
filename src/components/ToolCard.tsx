@@ -7,7 +7,6 @@ import { balanceOf as balanceOfErc20 } from "thirdweb/extensions/erc20";
 import { prepareContractCall, sendAndConfirmTransaction, ThirdwebContract, NFT } from "thirdweb";
 import { formatUnits, formatEther } from "viem";
 import { getContract } from "thirdweb";
-import { approve } from "thirdweb/extensions/erc20";
 
 import { client } from "@/lib/thirdweb/client";
 import { chain } from "@/lib/thirdweb/chain";
@@ -59,7 +58,7 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
     const quantityBigInt = typeof quantity === 'string' ? BigInt(quantity) : BigInt(Math.floor(Number(quantity) || 0));
     const totalPrice = price * quantityBigInt;
 
-    const { isLoading: isCurrencyBalanceLoading } = useReadContract(balanceOfErc20, {
+    const { data: currencyBalance, isLoading: isCurrencyBalanceLoading } = useReadContract(balanceOfErc20, {
         contract: currencyContract,
         address: address,
         queryOptions: { enabled: !!address && currencyAddress !== ZERO_ADDRESS }
@@ -98,6 +97,8 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
         const stakeTx = prepareContractCall({ contract: contractStaking, method: "function stake(uint256 _tokenId, uint64 _amount)", params: [tool.id, BigInt(quantity)] });
         return stakeTx;
     };
+
+    const hasInsufficientFunds = currencyBalance !== undefined && currencyBalance < totalPrice;
 
     return (
         <Box style={{ backgroundColor: 'var(--mantine-color-dark-7)', borderRadius: '8px', padding: '1rem' }}>
@@ -145,16 +146,20 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
                         <TransactionButton
                             transaction={async () => {
                                 if (!account) throw new Error("Wallet not connected.");
+                                // Check for approval if currency is not native token
                                 if (currencyAddress !== ZERO_ADDRESS && !hasEnoughAllowance) {
-                                    if (!currencyContract) throw new Error("Currency contract not found for approval.");
-                                    const approveTx = approve({
+                                    const approveTx = prepareContractCall({
                                         contract: currencyContract,
-                                        spender: contractTools.address,
-                                        amount: totalPrice.toString(),
+                                        method: "function approve(address spender, uint256 amount)",
+                                        params: [contractTools.address, totalPrice],
                                     });
-                                    await sendAndConfirmTransaction({ transaction: approveTx, account: account });
-                                    refetchAllowance && refetchAllowance();
+                                    await sendAndConfirmTransaction({
+                                        transaction: approveTx,
+                                        account: account,
+                                    });
+                                    await refetchAllowance();
                                 }
+                                // Return the claim transaction
                                 return claimTo({
                                     contract: contractTools,
                                     to: address!,
@@ -162,12 +167,12 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
                                     quantity: quantityBigInt,
                                 });
                             }}
-                            disabled={!account || !activeClaimCondition}
+                            disabled={!account || !activeClaimCondition || hasInsufficientFunds}
                             style={{ width: '100%' }}
                             onTransactionConfirmed={() => queryClient.invalidateQueries()}
                         >
                             <Flex align="center" justify="center" gap="xs">
-                                Buy {currencySymbol === 'USDC' ? formatUnits(price, 6) : formatEther(price)}
+                                Buy {currencySymbol === 'USDC' ? `$${parseFloat(formatUnits(price, 6)).toFixed(2)} USDC` : `${formatUnits(price, 18)} ETH`}
                                 {currencySymbol === 'USDC' && <MantineImage src="/assets/usdc.png" h={16} w={16} />}
                             </Flex>
                         </TransactionButton>
