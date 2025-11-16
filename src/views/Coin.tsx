@@ -4,23 +4,30 @@ import { PageTitle } from "@/components/Htm";
 import { CardTitle, ContractBox, Page, Subtitle } from '@/components/Page';
 import p from '@/source/coin';
 import { useState, useEffect } from 'react';
+import { Helmet } from "react-helmet-async";
 
 export default function Coin() {
    return (
-      <Container fluid>
-         <Flex direction='column' >
-            <PageTitle title={p.title} subtitle={p.subtitle} />
-            <FirstRow />
-            < SecondRow />
-            <Grid>
-               <Grid.Col span={12}>
-                  <Page>
-                     <CirculatingSupplyDisplay />
-                  </Page>
-               </Grid.Col>
-            </Grid>
-         </Flex>
-      </Container>
+      <>
+         <Helmet>
+            <title>$HASH Tokenomics | Mining Hash</title>
+            <meta name="description" content="Discover the tokenomics of the $HASH token. Learn about the total supply, circulating supply, distribution, and the utility that drives the Mining Hash ecosystem." />
+         </Helmet>
+         <Container fluid>
+            <Flex direction='column' >
+               <PageTitle title={p.title} subtitle={p.subtitle} />
+               <FirstRow />
+               < SecondRow />
+               <Grid>
+                  <Grid.Col span={12}>
+                     <Page>
+                        <CirculatingSupplyDisplay />
+                     </Page>
+                  </Grid.Col>
+               </Grid>
+            </Flex>
+         </Container>
+      </>
    );
 }
 

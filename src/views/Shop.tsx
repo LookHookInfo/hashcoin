@@ -3,6 +3,7 @@ import { useActiveAccount } from 'thirdweb/react';
 import { useQuery } from "@tanstack/react-query";
 import { getNFTs } from "thirdweb/extensions/erc1155";
 import { NFT } from "thirdweb";
+import { Helmet } from "react-helmet-async";
 
 import { contractTools, contractStaking } from "@/utils/contracts";
 import { ToolCard } from "@/components/ToolCard";
@@ -10,15 +11,21 @@ import { ToolCard } from "@/components/ToolCard";
 export default function Shop() {
     const account = useActiveAccount();
 
-    if (!account) {
-        return (
-            <Flex justify="center" align="center" h="80vh">
-                <Title order={3}>Please connect your wallet to start mining.</Title>
-            </Flex>
-        );
-    }
-
-    return <ShopContent address={account.address} />;
+    return (
+        <>
+            <Helmet>
+                <title>Mining & Tools | Mining Hash</title>
+                <meta name="description" content="Start mining $HASH tokens by acquiring your tools. Explore the available NFT tools and manage your inventory to maximize your earnings on the Mining Hash platform." />
+            </Helmet>
+            {!account ? (
+                <Flex justify="center" align="center" h="80vh">
+                    <Title order={3}>Please connect your wallet to start mining.</Title>
+                </Flex>
+            ) : (
+                <ShopContent address={account.address} />
+            )}
+        </>
+    );
 }
 
 function ShopContent({ address }: { address: string }) {

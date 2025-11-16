@@ -4,6 +4,7 @@ import { Page } from '@/components/Page';
 import { paperData, paperHeader, PaperSection } from '@/source/paper.ts';
 import { CopyAddressButton } from '@/components/CopyButton';
 import { IconDownload } from '@tabler/icons-react';
+import { Helmet } from 'react-helmet-async';
 
 const PaperPage: React.FC = () => {
 
@@ -53,77 +54,83 @@ const PaperPage: React.FC = () => {
   };
 
   return (
-    <Stack gap="xl">
-            {/* Header Card */}
-            <Page>
-              <Title order={1} ta="center">{paperHeader.title}</Title>
-              <Text size="lg" c="dimmed" ta="center" mt="sm">{paperHeader.subtitle}</Text>
-            </Page>
-      
-            {/* Content Sections Grid */}
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
-              {paperData.map((section, index) => (
-                <Page key={index}>
-                  <Title order={3}>
-                    {section.icon && <Text span mr="sm">{section.icon}</Text>}
-                    {section.title}
-                  </Title>
-                  <Stack mt="md" gap="xs">
-                    {section.content.map((item, itemIndex) => {
-                      // Special handling for lists starting with '•'
-                      if (typeof item === 'string' && item.startsWith('•')) {
-                        // Collect all list items together
-                        const listItems = [];
-                        for (let i = itemIndex; i < section.content.length; i++) {
-                          const currentItem = section.content[i];
-                          if (typeof currentItem === 'string' && currentItem.startsWith('•')) {
-                            listItems.push(currentItem);
-                          } else {
-                            break;
-                          }
-                        }
-                        // If we are at the first list item, render the whole list
-                        if (itemIndex === section.content.findIndex(i => typeof i === 'string' && i.startsWith('•'))) {
-                          return (
-                            <List c="dimmed" spacing="xs" mt="sm">
-                              {listItems.map((li, liIndex) => (
-                                <List.Item key={liIndex}>{li.substring(1).trim()}</List.Item>
-                              ))}
-                            </List>
-                          );
-                        }
-                        return null; // Don't render subsequent list items individually
-                      }
-                      return <div key={itemIndex}>{renderContent(item)}</div>;
-                    })}
-                  </Stack>
-                  {section.addresses && (
+    <>
+      <Helmet>
+        <title>White Paper | Mining Hash</title>
+        <meta name="description" content="Read the official White Paper for the Mining Hash project. Get a deep dive into our technology, tokenomics, business model, and long-term vision." />
+      </Helmet>
+      <Stack gap="xl">
+              {/* Header Card */}
+              <Page>
+                <Title order={1} ta="center">{paperHeader.title}</Title>
+                <Text size="lg" c="dimmed" ta="center" mt="sm">{paperHeader.subtitle}</Text>
+              </Page>
+        
+              {/* Content Sections Grid */}
+              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
+                {paperData.map((section, index) => (
+                  <Page key={index}>
+                    <Title order={3}>
+                      {section.icon && <Text span mr="sm">{section.icon}</Text>}
+                      {section.title}
+                    </Title>
                     <Stack mt="md" gap="xs">
-                      {section.addresses.map((addr, addrIndex) => (
-                        <Group key={addrIndex}>
-                          <Text fw={500}>{addr.title}:</Text>
-                          <CopyAddressButton address={addr.val} />
-                        </Group>
-                      ))}
+                      {section.content.map((item, itemIndex) => {
+                        // Special handling for lists starting with '•'
+                        if (typeof item === 'string' && item.startsWith('•')) {
+                          // Collect all list items together
+                          const listItems = [];
+                          for (let i = itemIndex; i < section.content.length; i++) {
+                            const currentItem = section.content[i];
+                            if (typeof currentItem === 'string' && currentItem.startsWith('•')) {
+                              listItems.push(currentItem);
+                            } else {
+                              break;
+                            }
+                          }
+                          // If we are at the first list item, render the whole list
+                          if (itemIndex === section.content.findIndex(i => typeof i === 'string' && i.startsWith('•'))) {
+                            return (
+                              <List c="dimmed" spacing="xs" mt="sm">
+                                {listItems.map((li, liIndex) => (
+                                  <List.Item key={liIndex}>{li.substring(1).trim()}</List.Item>
+                                ))}
+                              </List>
+                            );
+                          }
+                          return null; // Don't render subsequent list items individually
+                        }
+                        return <div key={itemIndex}>{renderContent(item)}</div>;
+                      })}
                     </Stack>
-                  )}
-                  {section.title === 'Conclusion' && (
-                    <Group justify="center" mt="xl">
-                      <Button
-                        component="a"
-                        href="/assets/Mining Hash.pdf"
-                        download
-                        size="lg"
-                        leftSection={<IconDownload size={20} />}
-                      >
-                        Download White Paper
-                      </Button>
-                    </Group>
-                  )}
-                </Page>
-              ))}
-            </SimpleGrid>
-    </Stack>
+                    {section.addresses && (
+                      <Stack mt="md" gap="xs">
+                        {section.addresses.map((addr, addrIndex) => (
+                          <Group key={addrIndex}>
+                            <Text fw={500}>{addr.title}:</Text>
+                            <CopyAddressButton address={addr.val} />
+                          </Group>
+                        ))}
+                      </Stack>
+                    )}
+                    {section.title === 'Conclusion' && (
+                      <Group justify="center" mt="xl">
+                        <Button
+                          component="a"
+                          href="/assets/Mining Hash.pdf"
+                          download
+                          size="lg"
+                          leftSection={<IconDownload size={20} />}
+                        >
+                          Download White Paper
+                        </Button>
+                      </Group>
+                    )}
+                  </Page>
+                ))}
+              </SimpleGrid>
+      </Stack>
+    </>
   );
 };
 
