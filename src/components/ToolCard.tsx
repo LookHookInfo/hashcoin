@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Box, Flex, Loader, Text, Button, Group, TextInput, Image as MantineImage, Grid } from "@mantine/core";
 import { MediaRenderer, useActiveAccount, useReadContract } from 'thirdweb/react';
 import { useQuery } from "@tanstack/react-query";
 import { balanceOf as balanceOfErc1155, isApprovedForAll, setApprovalForAll, claimTo, getClaimConditions } from "thirdweb/extensions/erc1155";
 import { balanceOf as balanceOfErc20 } from "thirdweb/extensions/erc20";
 import { prepareContractCall, sendAndConfirmTransaction, ThirdwebContract, NFT } from "thirdweb";
-import { formatUnits, formatEther } from "viem";
+import { formatUnits } from "viem";
 import { getContract } from "thirdweb";
 
 import { client } from "@/lib/thirdweb/client";

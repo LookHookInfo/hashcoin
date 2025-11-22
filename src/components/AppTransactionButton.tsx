@@ -3,11 +3,12 @@ import {
     type TransactionButtonProps,
   } from "thirdweb/react";
   import { useQueryClient } from "@tanstack/react-query";
+  import type { TransactionReceipt } from "viem"; // Corrected import
   
   export function AppTransactionButton(props: TransactionButtonProps) {
     const queryClient = useQueryClient();
   
-    const handleTransactionConfirmed = () => {
+    const handleTransactionConfirmed = (receipt: TransactionReceipt) => {
       // Invalidate all thirdweb queries to refetch blockchain data
       queryClient.invalidateQueries({ queryKey: ["thirdweb"] });
   
@@ -21,7 +22,7 @@ import {
   
       // If the original component had its own onTransactionConfirmed, call it too.
       if (props.onTransactionConfirmed) {
-        props.onTransactionConfirmed();
+        props.onTransactionConfirmed(receipt);
       }
     };
   

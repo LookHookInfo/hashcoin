@@ -1,4 +1,4 @@
-import { Container, Flex, Loader, SimpleGrid, Title, Button, Image } from "@mantine/core";
+import { Container, Flex, Loader, SimpleGrid, Title, Image } from "@mantine/core";
 import { useActiveAccount, useReadContract } from 'thirdweb/react';
 import { useQuery } from "@tanstack/react-query";
 import { getNFTs } from "thirdweb/extensions/erc1155";

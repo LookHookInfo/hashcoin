@@ -11,7 +11,7 @@ export const ConnectWalletButton: FC = () => {
         theme="dark"
         appMetadata={{
           name: "Mining Hash",
-          url: "https://mininghash.com",
+          url: "https://hashcoin.farm",
         }}
       />
     </Box>
