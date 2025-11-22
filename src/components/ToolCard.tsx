@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Box, Flex, Loader, Text, Button, Group, TextInput, Image as MantineImage, Grid } from "@mantine/core";
-import { MediaRenderer, TransactionButton, useActiveAccount, useReadContract } from 'thirdweb/react';
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { MediaRenderer, useActiveAccount, useReadContract } from 'thirdweb/react';
+import { useQuery } from "@tanstack/react-query";
 import { balanceOf as balanceOfErc1155, isApprovedForAll, setApprovalForAll, claimTo, getClaimConditions } from "thirdweb/extensions/erc1155";
 import { balanceOf as balanceOfErc20 } from "thirdweb/extensions/erc20";
 import { prepareContractCall, sendAndConfirmTransaction, ThirdwebContract, NFT } from "thirdweb";
@@ -10,7 +10,8 @@ import { getContract } from "thirdweb";
 
 import { client } from "@/lib/thirdweb/client";
 import { chain } from "@/lib/thirdweb/chain";
-import classes from './ToolCard.module.css'; // Import the new CSS module
+import { AppTransactionButton } from "./AppTransactionButton";
+import classes from './ToolCard.module.css';
 
 interface ToolCardProps {
     tool: NFT;
@@ -22,7 +23,6 @@ interface ToolCardProps {
 export function ToolCard({ tool, address, contractTools, contractStaking }: ToolCardProps) {
     const [quantity, setQuantity] = useState<number | string>(1);
     const account = useActiveAccount();
-    const queryClient = useQueryClient();
 
     const { data: balance, isLoading: isLoadingBalance } = useQuery({
         queryKey: ["balance", tool.id.toString(), address],
@@ -42,7 +42,7 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
 
     const activeClaimCondition = claimConditions && claimConditions.length > 0 ? claimConditions[0] : undefined;
 
-    const { data: isApproved, refetch: refetchApproval } = useQuery({
+    const { data: isApproved, isLoading: isLoadingIsApproved } = useQuery({
         queryKey: ["isApproved", address, contractStaking.address],
         queryFn: async () => {
             if (!account) return false;
@@ -64,7 +64,7 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
         queryOptions: { enabled: !!address && currencyAddress !== ZERO_ADDRESS }
     });
 
-    const { data: allowance, isLoading: isLoadingAllowance, refetch: refetchAllowance } = useReadContract({
+    const { data: allowance, isLoading: isLoadingAllowance } = useReadContract({
         contract: currencyContract,
         method: "function allowance(address, address) view returns (uint256)",
         params: address ? [address, contractTools.address] : [ZERO_ADDRESS, contractTools.address],
@@ -80,23 +80,15 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
         queryOptions: { enabled: currencyAddress !== ZERO_ADDRESS }
     });
 
-    if (isLoadingBalance || isLoadingStakeInfo || isLoadingClaimConditions || isLoadingAllowance || isLoadingCurrencySymbol || isCurrencyBalanceLoading) {
+    if (isLoadingBalance || isLoadingStakeInfo || isLoadingClaimConditions || isLoadingAllowance || isLoadingCurrencySymbol || isCurrencyBalanceLoading || isLoadingIsApproved) {
         return <Box style={{ border: '1px solid #ced4da', borderRadius: '4px', padding: '1rem', minHeight: '300px' }}><Loader /></Box>;
     }
 
     const [stakedAmount, claimableRewards] = stakeInfo || [0n, 0n];
     const ownAmount = balance || 0n;
 
-    const handleEquip = async () => {
-        if (!account) throw new Error("Not connected");
-        if (!isApproved) {
-            const approvalTx = setApprovalForAll({ contract: contractTools, operator: contractStaking.address, approved: true });
-            await sendAndConfirmTransaction({ transaction: approvalTx, account });
-            refetchApproval();
-        }
-        const stakeTx = prepareContractCall({ contract: contractStaking, method: "function stake(uint256 _tokenId, uint64 _amount)", params: [tool.id, BigInt(quantity)] });
-        return stakeTx;
-    };
+    // handleEquip is now an inline function within the AppTransactionButton
+    // Refetching approval will be handled by AppTransactionButton's global invalidation
 
     const hasInsufficientFunds = currencyBalance !== undefined && currencyBalance < totalPrice;
 
@@ -143,7 +135,7 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
 
                 <Grid.Col span={{ base: 12, md: 5 }}>
                     <Flex direction="column" mt={{ base: 'md', md: 0 }} gap="xs" justify="center" h="100%">
-                        <TransactionButton
+                        <AppTransactionButton
                             transaction={async () => {
                                 if (!account) throw new Error("Wallet not connected.");
                                 // Check for approval if currency is not native token
@@ -157,7 +149,6 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
                                         transaction: approveTx,
                                         account: account,
                                     });
-                                    await refetchAllowance();
                                 }
                                 // Return the claim transaction
                                 return claimTo({
@@ -169,40 +160,44 @@ export function ToolCard({ tool, address, contractTools, contractStaking }: Tool
                             }}
                             disabled={!account || !activeClaimCondition || hasInsufficientFunds}
                             style={{ width: '100%' }}
-                            onTransactionConfirmed={() => queryClient.invalidateQueries()}
                         >
                             <Flex align="center" justify="center" gap="xs">
                                 Buy {currencySymbol === 'USDC' ? `$${parseFloat(formatUnits(price, 6)).toFixed(2)} USDC` : `${formatUnits(price, 18)} ETH`}
                                 {currencySymbol === 'USDC' && <MantineImage src="/assets/usdc.png" h={16} w={16} />}
                             </Flex>
-                        </TransactionButton>
+                        </AppTransactionButton>
 
-                        <TransactionButton
-                            transaction={handleEquip}
+                        <AppTransactionButton
+                            transaction={async () => { // Original handleEquip logic inlined here
+                                if (!account) throw new Error("Not connected");
+                                if (!isApproved) {
+                                    const approvalTx = setApprovalForAll({ contract: contractTools, operator: contractStaking.address, approved: true });
+                                    await sendAndConfirmTransaction({ transaction: approvalTx, account });
+                                }
+                                const stakeTx = prepareContractCall({ contract: contractStaking, method: "function stake(uint256 _tokenId, uint64 _amount)", params: [tool.id, BigInt(quantity)] });
+                                return stakeTx;
+                            }}
                             disabled={ownAmount === 0n || quantityBigInt > ownAmount}
                             style={{ width: '100%' }}
-                            onTransactionConfirmed={() => queryClient.invalidateQueries()}
                         >
                             {(isApproved ? "Equip" : "Approve & Equip")} ({ownAmount.toString()})
-                        </TransactionButton>
+                        </AppTransactionButton>
 
-                        <TransactionButton
+                        <AppTransactionButton
                             transaction={() => prepareContractCall({ contract: contractStaking, method: "function withdraw(uint256, uint64)", params: [tool.id, BigInt(quantity)] })}
                             disabled={stakedAmount === 0n || quantityBigInt > stakedAmount}
                             style={{ width: '100%' }}
-                            onTransactionConfirmed={() => queryClient.invalidateQueries()}
                         >
                             Unequip ({stakedAmount.toString()})
-                        </TransactionButton>
+                        </AppTransactionButton>
 
-                        <TransactionButton
+                        <AppTransactionButton
                             transaction={() => prepareContractCall({ contract: contractStaking, method: "function claimRewards(uint256)", params: [tool.id] })}
                             disabled={claimableRewards === 0n}
                             style={{ width: '100%' }}
-                            onTransactionConfirmed={() => queryClient.invalidateQueries()}
                         >
                             Claim {claimableRewards ? `(${parseFloat(formatUnits(claimableRewards, 18)).toFixed(2)})` : ''}
-                        </TransactionButton>
+                        </AppTransactionButton>
                     </Flex>
                 </Grid.Col>
             </Grid>

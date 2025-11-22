@@ -1,4 +1,4 @@
-import { AppShell, Group, Menu, Button, Image, Text, Skeleton, Anchor, Flex } from '@mantine/core';
+import { AppShell, Group, Menu, Button, Image, Text, Skeleton, Anchor, Flex, Title, Loader } from '@mantine/core';
 import { Outlet, Link } from 'react-router-dom';
 import { ConnectWalletButton } from './ConnectWalletButton';
 import classes from './AppLayout.module.css';
@@ -133,3 +133,4 @@ function AccountMenu({ account, wallet, disconnect }: AccountMenuProps) {
       </Menu>
    )
 }
+

@@ -5,3 +5,11 @@ a:link, a:visited { color: #A5D8FF; }
 a:hover { color: #339AF0; }
 .break { word-break: break-all; }
 
+@keyframes pulsatingGlow {
+    0% {
+      box-shadow: 0 0 5px #228be6, 0 0 10px #228be6; /* Initial state, subtle glow */
+    }
+    100% {
+      box-shadow: 0 0 10px #228be6, 0 0 20px #228be6, 0 0 30px #228be6; /* Brighter, more noticeable glow */
+    }
+  }

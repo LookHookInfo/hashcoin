@@ -4,11 +4,13 @@ import { client } from "../lib/thirdweb/client";
 import { chain } from "../lib/thirdweb/chain";
 import { nameContract, hashcoinContract } from "../utils/contracts";
 import { useSendTransaction, useActiveAccount } from "thirdweb/react";
+import { useQueryClient } from "@tanstack/react-query";
 
 type NameContractStatus = "error" | "taken" | "success" | "idle";
 
 export function useNameContract(setStatus: (status: NameContractStatus) => void) {
   const account = useActiveAccount();
+  const queryClient = useQueryClient();
   const [price, setPrice] = useState<bigint | null>(null);
   const [displayPrice, setDisplayPrice] = useState<bigint | null>(null);
   const [confirmedHash, setConfirmedHash] = useState<string | null>(null);
@@ -148,6 +150,7 @@ export function useNameContract(setStatus: (status: NameContractStatus) => void)
       setIsConfirming(true);
       const receipt = await waitForReceipt({ client, chain, transactionHash: tx.transactionHash });
       setConfirmedHash(receipt.transactionHash);
+      queryClient.invalidateQueries({ queryKey: ['thirdweb'] });
       setStatus("taken");
       return true;
     } catch (err: unknown) {
@@ -156,7 +159,7 @@ export function useNameContract(setStatus: (status: NameContractStatus) => void)
     } finally {
       setIsConfirming(false);
     }
-  }, [sendTx, setStatus]);
+  }, [sendTx, setStatus, queryClient]);
 
   const unifiedClaim = useCallback(async (name: string) => {
     setIsConfirming(true);

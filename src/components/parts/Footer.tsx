@@ -1,7 +1,7 @@
 import { Container, Group, Anchor } from "@mantine/core";
 import { IconBrandTelegram, IconBrandDiscord, IconBrandX, IconBrandGithub, IconExternalLink } from '@tabler/icons-react';
 import { Link } from "react-router-dom";
-import classes from './Footer.module.css';
+import classes from '../AppLayout.module.css';
 
 export default function Footer() {
    return (
@@ -9,10 +9,10 @@ export default function Footer() {
          <Container className={classes.inner}>
             {/* Navigation Links */}
             <Group className={classes.links} gap="lg" justify="center">
-               <Link to="/coin" className={classes.link}>Coin</Link>
-               <Link to="/road" className={classes.link}>Road</Link>
-               <Link to="/paper" className={classes.link}>Paper</Link>
-               <Anchor href="https://lookhook.info/" target="_blank" className={classes.link}>
+               <Link to="/coin" className={classes.navLink}>Coin</Link>
+               <Link to="/road" className={classes.navLink}>Road</Link>
+               <Link to="/paper" className={classes.navLink}>Paper</Link>
+               <Anchor href="https://lookhook.info/" target="_blank" className={classes.navLink}>
                   Dev <IconExternalLink size={16} style={{ verticalAlign: 'middle' }} />
                </Anchor>
             </Group>

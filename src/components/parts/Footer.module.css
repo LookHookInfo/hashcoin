@@ -22,17 +22,3 @@
         margin-bottom: var(--mantine-spacing-sm);
     }
 }
-
-.link {
-    color: var(--mantine-color-gray-0);
-    text-decoration: none;
-    font-size: var(--mantine-font-size-sm);
-    font-weight: 500;
-    padding: 8px 12px;
-    border-radius: var(--mantine-radius-sm);
-    transition: background-color 100ms ease;
-
-    &:hover {
-        background-color: var(--mantine-color-dark-5);
-    }
-}
