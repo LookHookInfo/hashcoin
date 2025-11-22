@@ -17,8 +17,12 @@ import {
       queryClient.invalidateQueries({ queryKey: ["balance"] });
       queryClient.invalidateQueries({ queryKey: ["isApproved"] });
 
-      // This key is used in Shop.tsx
+      // This key is used in Shop.tsx for the list of tools
       queryClient.invalidateQueries({ queryKey: ["allTools"] });
+
+      // These keys are for the role button in Shop.tsx
+      queryClient.invalidateQueries({ queryKey: ["canMintRole"] });
+      queryClient.invalidateQueries({ queryKey: ["roleBalance"] });
   
       // If the original component had its own onTransactionConfirmed, call it too.
       if (props.onTransactionConfirmed) {

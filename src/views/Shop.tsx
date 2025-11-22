@@ -39,12 +39,18 @@ function ShopContent({ address }: { address: string }) {
         contract: contractFarmRole,
         method: "function canMint(address user) view returns (bool)",
         params: [address],
+        queryOptions: {
+            queryKey: ["canMintRole", address]
+        }
     });
 
     const { data: roleBalance, isLoading: isLoadingRoleBalance } = useReadContract({
         contract: contractFarmRole,
         method: "function balanceOf(address owner) view returns (uint256)",
         params: [address],
+        queryOptions: {
+            queryKey: ["roleBalance", address]
+        }
     });
 
     const hasMintedRole = roleBalance && roleBalance > 0n;
