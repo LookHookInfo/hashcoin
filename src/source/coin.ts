@@ -5,7 +5,7 @@ const p = {
       title: "General Information",
       list: [
          { title: "Token Name:", val: "Hash Coin" },
-         { title: "Token Symbol:", val: "HASH" },
+{ title: "Token Symbol:", val: "https://thirdweb.com/thirdweb.eth/TokenERC20/5.0.1 Support from Thirdweb (rights removed) audit." },
          { title: "Total Supply:", val: "10 billion HASH" },
       ],
       contact: { title: "Coin Contract", val: "0xA9B631ABcc4fd0bc766d7C0C8fCbf866e2bB0445" }

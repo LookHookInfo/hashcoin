@@ -255,7 +255,14 @@ function FirstRow(): React.ReactNode {
                   {
                      p.p1.list.map((item, index) => (
                         <Text py={2} key={index} ta="center">
-                           <Text component='span' fw='bold' > {item.title} </Text> {item.val}
+                           <Text component='span' fw='bold' > {item.title} </Text>
+                           {item.val.startsWith('https://') ? (
+                              <a href={item.val.split(' ')[0]} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                                 {item.val.substring(item.val.indexOf(' ') + 1)}
+                              </a>
+                           ) : (
+                              item.val
+                           )}
                         </Text>
                      ))
                   }
