@@ -1,10 +1,11 @@
-import { Flex, SimpleGrid, Image, Text, Box, Title, Grid, Card, Table, Progress, Container, Divider } from "@mantine/core";
+import { Flex, SimpleGrid, Image, Text, Box, Title, Grid, Card, Table, Progress, Container, Divider, Tooltip } from "@mantine/core";
 import { DonutChart } from '@mantine/charts';
 import { PageTitle } from "@/components/Htm";
 import { CardTitle, ContractBox, Page, Subtitle } from '@/components/Page';
 import p from '@/source/coin';
 import { useState, useEffect } from 'react';
 import { Helmet } from "react-helmet-async";
+import { IconShieldCheck } from '@tabler/icons-react';
 
 export default function Coin() {
    return (
@@ -257,9 +258,12 @@ function FirstRow(): React.ReactNode {
                         <Text py={2} key={index} ta="center">
                            <Text component='span' fw='bold' > {item.title} </Text>
                            {item.val.startsWith('https://') ? (
-                              <a href={item.val.split(' ')[0]} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
-                                 {item.val.substring(item.val.indexOf(' ') + 1)}
-                              </a>
+                              <Tooltip label="Contract ownership revoked." withArrow>
+                                 <a href={item.val.split(' ')[0]} target="_blank" rel="noopener noreferrer" style={{ color: '#A5D8FF', textDecoration: 'underline' }}>
+                                    {item.val.substring(item.val.indexOf(' ') + 1)}
+                                    <IconShieldCheck size={16} style={{ verticalAlign: 'middle', marginLeft: '4px' }} />
+                                 </a>
+                              </Tooltip>
                            ) : (
                               item.val
                            )}
