@@ -6,6 +6,7 @@ import p from '@/source/coin';
 import { useState, useEffect } from 'react';
 import { Helmet } from "react-helmet-async";
 import { IconShieldCheck } from '@tabler/icons-react';
+import { ListingInfo } from "@/components/ListingInfo";
 
 export default function Coin() {
    return (
@@ -19,6 +20,7 @@ export default function Coin() {
                <PageTitle title={p.title} subtitle={p.subtitle} />
                <FirstRow />
                < SecondRow />
+               <ListingInfo />
                <Grid>
                   <Grid.Col span={12}>
                      <Page>
