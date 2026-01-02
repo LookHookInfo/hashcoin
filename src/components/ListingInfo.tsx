@@ -88,9 +88,9 @@ export function ListingInfo() {
 
   return (
     <Box mb="md">
-      <Accordion variant="separated" defaultValue="listing-info">
+      <Accordion variant="separated">
         <Accordion.Item value="listing-info">
-          <Accordion.Control>
+          <Accordion.Control classNames={{ chevron: 'accordion-chevron-pulsate' }}>
             <Title order={4}>Listing Information</Title>
           </Accordion.Control>
           <Accordion.Panel>

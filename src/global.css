@@ -13,3 +13,8 @@ a:hover { color: #339AF0; }
       box-shadow: 0 0 10px #228be6, 0 0 20px #228be6, 0 0 30px #228be6; /* Brighter, more noticeable glow */
     }
   }
+
+.accordion-chevron-pulsate {
+  animation: pulsatingGlow 1.5s infinite alternate;
+  transform-origin: center;
+}
