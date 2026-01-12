@@ -5,7 +5,12 @@ import {
   import { useQueryClient } from "@tanstack/react-query";
   import type { TransactionReceipt } from "viem"; // Corrected import
   
-  export function AppTransactionButton(props: TransactionButtonProps) {
+  interface AppTransactionButtonProps extends TransactionButtonProps {
+    size?: "xs" | "sm" | "md" | "lg" | "xl";
+    className?: string;
+  }
+  
+  export function AppTransactionButton({ size = "md", className, ...props }: AppTransactionButtonProps) {
     const queryClient = useQueryClient();
   
     const handleTransactionConfirmed = (receipt: TransactionReceipt) => {
@@ -32,6 +37,8 @@ import {
   
     return (
       <ThirdwebTransactionButton
+        size={size}
+        className={className}
         {...props}
         onTransactionConfirmed={handleTransactionConfirmed}
       />

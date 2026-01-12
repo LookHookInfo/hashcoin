@@ -1,13 +1,16 @@
-import { Container, Flex, Loader, SimpleGrid, Title, Image } from "@mantine/core";
-import { useActiveAccount, useReadContract } from 'thirdweb/react';
+import { Anchor, Button, Container, Flex, Loader, SimpleGrid, Title, Tooltip, Text } from "@mantine/core";
+import { useActiveAccount } from 'thirdweb/react';
 import { useQuery } from "@tanstack/react-query";
 import { getNFTs } from "thirdweb/extensions/erc1155";
-import { NFT, prepareContractCall } from "thirdweb";
+import { NFT } from "thirdweb";
 import { Helmet } from "react-helmet-async";
-import { AppTransactionButton } from "@/components/AppTransactionButton";
+import { formatEther } from "viem";
 
-import { contractTools, contractStaking, contractFarmRole } from "@/utils/contracts";
+import { contractTools, contractStaking } from "@/utils/contracts";
 import { ToolCard } from "@/components/ToolCard";
+import styles from "./Shop.module.css";
+import { useGalxeRewardClaim } from "@/hooks/useGalxeRewardClaim";
+import { useRoleClaim } from "@/hooks/useRoleClaim";
 
 export default function Shop() {
     const account = useActiveAccount();
@@ -35,53 +38,63 @@ function ShopContent({ address }: { address: string }) {
         queryFn: () => getNFTs({ contract: contractTools }),
     });
 
-    const { data: canMintRole, isLoading: isLoadingCanMint } = useReadContract({
-        contract: contractFarmRole,
-        method: "function canMint(address user) view returns (bool)",
-        params: [address],
-        queryOptions: {
-            queryKey: ["canMintRole", address]
-        }
-    });
-
-    const { data: roleBalance, isLoading: isLoadingRoleBalance } = useReadContract({
-        contract: contractFarmRole,
-        method: "function balanceOf(address owner) view returns (uint256)",
-        params: [address],
-        queryOptions: {
-            queryKey: ["roleBalance", address]
-        }
-    });
-
-    const hasMintedRole = roleBalance && roleBalance > 0n;
+    const { canClaim, hasClaimed, isChecking: isCheckingReward, isClaiming: isClaimingReward, claimReward, availableRewardTokens, userRewardAmount } = useGalxeRewardClaim();
+    const { canMint, hasMinted, isChecking: isCheckingRole, isMinting, claimRole } = useRoleClaim();
 
     if (isLoadingTools) {
         return <Flex justify="center" align="center" h="80vh"><Loader /></Flex>;
+    }
+
+    const rewardTooltipLabel = () => {
+        if (!availableRewardTokens || !userRewardAmount) {
+            return <Text>Loading rewards...</Text>;
+        }
+        const totalRewards = parseFloat(formatEther(availableRewardTokens)).toFixed(0);
+        const perUserReward = parseFloat(formatEther(userRewardAmount)).toFixed(0);
+        return (
+            <Flex direction="column">
+                <Text>Total Rewards: {totalRewards} HASH</Text>
+                <Text>Earn {perUserReward} HASH on Galxe</Text>
+            </Flex>
+        );
     }
 
     return (
         <Container fluid>
             <Flex direction="column" gap="xl">
                 <Flex justify="space-between" align="center">
-                    <Title order={3} mb="xs">inventory</Title>
-                    <AppTransactionButton
-                        transaction={() => prepareContractCall({
-                            contract: contractFarmRole,
-                            method: "function mint()",
-                            params: []
-                        })}
-                        disabled={isLoadingCanMint || isLoadingRoleBalance || hasMintedRole || !canMintRole}
-                        style={
-                            (canMintRole && !hasMintedRole)
-                                ? { animation: 'pulsatingGlow 2s infinite alternate' }
-                                : undefined
-                        }
-                    >
-                        <Flex align="center" justify="center" gap="xs">
-                            {hasMintedRole ? "Minted" : "Claim Role"}
-                            <Image src="/assets/Farm.png" h={20} w={20} />
-                        </Flex>
-                    </AppTransactionButton>
+                    <Title order={5} mb="xs">inventory</Title>
+                    <Flex gap="md" align="center"> {/* Align items to center vertically */}
+                        <Anchor href="https://app.galxe.com/quest/bAFdwDecXS6NRWsbYqVAgh/GCbZStYWKo" target="_blank" rel="noopener noreferrer" className={styles.galxeLink}>
+                            Galxe
+                        </Anchor>
+                        <Button
+                            size="sm"
+                            className={`${styles.customConnectButton} ${canMint && !hasMinted ? styles.pulsatingGlow : ''}`}
+                            onClick={claimRole}
+                            disabled={isCheckingRole || isMinting || !canMint || hasMinted}
+                            variant="default"
+                        >
+                            <Flex align="center" justify="center" gap="xs">
+                                {isMinting && <Loader size="xs" />}
+                                <span>{hasMinted ? "Minted" : "Badge"}</span>
+                            </Flex>
+                        </Button>
+                        <Tooltip label={rewardTooltipLabel()}>
+                            <Button
+                                size="sm"
+                                className={`${styles.customConnectButton} ${canClaim ? styles.pulsatingGlow : ''}`}
+                                onClick={claimReward}
+                                disabled={isCheckingReward || isClaimingReward || !canClaim}
+                                variant="default"
+                            >
+                                <Flex align="center" justify="center" gap="xs">
+                                    {isClaimingReward && <Loader size="xs" />}
+                                    <span>{hasClaimed ? "Claimed" : "Reward"}</span>
+                                </Flex>
+                            </Button>
+                        </Tooltip>
+                    </Flex>
                 </Flex>
 
                 <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">

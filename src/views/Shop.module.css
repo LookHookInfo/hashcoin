@@ -1,4 +1,49 @@
-.glowButton {
-    animation: pulsatingGlow 2s infinite alternate;
+.customConnectButton {
+    background: var(--mantine-color-dark-7); /* Header background color */
+    border: 1px solid var(--mantine-color-dark-4); /* Header border color */
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 500;
+    color: white;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.customConnectButton:hover {
+    background: var(--mantine-color-dark-5); /* Slightly lighter on hover */
+}
+
+.customConnectButton:disabled {
+    background: var(--mantine-color-dark-7);
+    border-color: var(--mantine-color-dark-4);
+    color: rgba(255, 255, 255, 0.3);
+    opacity: 0.7; /* Slightly faded when disabled */
+    cursor: not-allowed;
+}
+
+.galxeLink {
+    display: block;
+    padding: 8px 12px;
+    border-radius: var(--mantine-radius-sm);
+    text-decoration: none;
+    color: var(--mantine-color-gray-0);
+    font-weight: 500;
+    font-size: var(--mantine-font-size-sm);
+    transition: background-color 100ms ease;
+
+    &:hover {
+        background-color: var(--mantine-color-dark-5);
+    }
+}
+
+@keyframes pulsatingGlow {
+    0% {
+      box-shadow: 0 0 5px rgba(0, 172, 238, 0.5), 0 0 10px rgba(0, 172, 238, 0.4);
+    }
+    100% {
+      box-shadow: 0 0 20px rgba(0, 172, 238, 1), 0 0 30px rgba(0, 172, 238, 0.8);
+    }
   }
   
+  .pulsatingGlow {
+    animation: pulsatingGlow 2s infinite alternate;
+  }
