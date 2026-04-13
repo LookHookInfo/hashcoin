@@ -1,0 +1,32 @@
+type Token @entity {
+  id: ID! # Address
+  name: String!
+  symbol: String!
+  creator: Bytes!
+  logoHash: Bytes!
+  description: String!
+  website: String
+  twitter: String
+  telegram: String
+  guild: String
+  
+  # Stats
+  sold: BigInt!
+  raised: BigInt!
+  miningReserve: BigInt!
+  isMigrated: Boolean!
+  isCurveCompleted: Boolean!
+  
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type Trade @entity {
+  id: ID! # txHash + logIndex
+  token: Token!
+  user: Bytes!
+  isBuy: Boolean!
+  hashAmt: BigInt!
+  memeAmt: BigInt!
+  timestamp: BigInt!
+}

@@ -1,0 +1,28 @@
+.imageContainer {
+    position: relative;
+    width: 100%;
+    height: 150px; /* Match MediaRenderer height */
+    border-radius: 4px;
+    overflow: hidden; /* Ensure title doesn't overflow rounded corners */
+}
+
+.titleCurtain {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent dark background */
+    color: white;
+    padding: 4px 12px;
+    border-radius: 0 0 12px 12px; /* Rounded bottom corners */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+    border-top: none; /* No border on top */
+    -webkit-backdrop-filter: blur(4px); /* Glassy effect for Safari */
+    backdrop-filter: blur(4px); /* Glassy effect */
+    z-index: 1; /* Ensure it's above the image */
+    white-space: nowrap; /* Prevent title from wrapping */
+    overflow: hidden; /* Hide overflow if title is too long */
+    text-overflow: ellipsis; /* Add ellipsis for long titles */
+    max-width: 90%; /* Limit width to prevent overflow on small cards */
+    text-align: center;
+}
