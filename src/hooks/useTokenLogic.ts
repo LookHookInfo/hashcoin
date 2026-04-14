@@ -7,19 +7,7 @@ import { useMemo } from "react";
 import { useAlchemyReadContract } from "@/hooks/useAlchemyRead";
 import gemfunAbi from "@/lib/abi/gemfun.json";
 import type { Abi } from "viem";
-
-export const CURVE_SUPPLY = 300_000_000n * 10n ** 18n;
-export const MINING_RESERVE = 400_000_000n * 10n ** 18n;
-const DETAIL_REFRESH_INTERVAL_MS = 15_000;
-const erc20Abi = [
-  {
-    type: "function",
-    name: "balanceOf",
-    stateMutability: "view",
-    inputs: [{ name: "owner", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-] as const satisfies Abi;
+import { CURVE_SUPPLY, MINING_RESERVE } from "@/utils/constants";
 
 export type TokenInfo = [boolean, boolean, bigint, bigint, bigint];
 export type TokenMetadata = [string, string, string, string, string, string];
@@ -62,12 +50,7 @@ type FullDataObject = {
   stats: TokenInfo;
 };
 
-type FullDataTuple = [
-  TokenCore,
-  TokenMetadataFields,
-  string,
-  TokenInfo,
-];
+type FullDataTuple = [TokenCore, TokenMetadataFields, string, TokenInfo];
 
 type AccountDataObject = {
   walletBalance: bigint;
@@ -86,6 +69,15 @@ export type UserStake = {
 };
 
 const EMPTY_STAKE_AMOUNTS: StakeAmounts = [0n, 0n, 0n, 0n, 0n, 0n];
+const erc20Abi = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const satisfies Abi;
 
 const getCachedMeta = (addr: string) => {
     if (!addr || addr === "0x0000000000000000000000000000000000000000") return null;
@@ -93,35 +85,20 @@ const getCachedMeta = (addr: string) => {
     return data ? (JSON.parse(data) as CachedMeta) : null;
 };
 
-/**
- * getIpfsUrl - Converts IPFS URI to HTTP Gateway URL
- * Supports: ipfs://, raw CIDs, and bytes32 hex hashes
- */
 export const getIpfsUrl = (uri: string) => {
   if (!uri) return "";
-  
-  // Handle bytes32 hex strings (66 chars including 0x)
   if (uri.startsWith("0x") && uri.length === 66) {
     if (uri === "0x0000000000000000000000000000000000000000000000000000000000000000") return "";
-    // If it doesn't look like a hex-encoded string (low entropy/no common chars), 
-    // it might be a raw multihash. But most likely it's a CID.
-    // For now, if it's hex, we treat it as a potential hash.
     return `https://ipfs.io/ipfs/${uri}`; 
   }
-
   if (uri.startsWith("ipfs://")) return uri.replace("ipfs://", "https://ipfs.io/ipfs/");
   if (uri.startsWith("Qm") || uri.startsWith("ba")) return `https://ipfs.io/ipfs/${uri}`;
   return uri;
 };
 
-/**
- * normalizeMetadata - Shared logic to parse logo and description
- */
 export const normalizeMetadata = (rawLogo: string, rawDesc: string, links?: any): TokenMetadata => {
     let logoUri = rawLogo || "";
     let cleanDesc = rawDesc || "";
-
-    // Specific logic: if description starts with ipfs:// and has a pipe, it's [logo]|[desc]
     if (cleanDesc.includes("|")) {
         const parts = cleanDesc.split("|");
         if (parts[0].startsWith("ipfs://") || parts[0].startsWith("Qm") || parts[0].startsWith("ba")) {
@@ -129,10 +106,8 @@ export const normalizeMetadata = (rawLogo: string, rawDesc: string, links?: any)
             cleanDesc = parts.slice(1).join("|");
         }
     }
-
     return [
-        logoUri,
-        cleanDesc,
+        logoUri, cleanDesc,
         links?.website || links?.[0] || "",
         links?.twitter || links?.[1] || "",
         links?.telegram || links?.[2] || "",
@@ -148,23 +123,15 @@ export const formatAmount = (val: string | number | bigint) => {
   }).format(num);
 };
 
-/**
- * Shared logic to calculate Bonding Curve Progress percentage
- */
 export const calculateCurveProgress = (sold: bigint | string | undefined) => {
     if (!sold) return 0;
     try {
         const soldBig = typeof sold === 'bigint' ? sold : BigInt(sold);
         const progress = Number(soldBig * 10000n / CURVE_SUPPLY) / 100;
         return Math.min(progress, 100);
-    } catch {
-        return 0;
-    }
+    } catch { return 0; }
 };
 
-/**
- * Shared logic to calculate Mining Progress percentage (how much is mined from reserve)
- */
 export const calculateMiningProgress = (currentReserve: bigint | string | undefined) => {
     if (!currentReserve) return 0;
     try {
@@ -172,9 +139,7 @@ export const calculateMiningProgress = (currentReserve: bigint | string | undefi
         const mined = MINING_RESERVE > reserveBig ? MINING_RESERVE - reserveBig : 0n;
         const progress = Number(mined * 10000n / MINING_RESERVE) / 100;
         return Math.min(progress, 100);
-    } catch {
-        return 0;
-    }
+    } catch { return 0; }
 };
 
 const normalizeFullData = (fullData: FullDataObject | FullDataTuple | undefined): FullDataObject | null => {
@@ -197,14 +162,10 @@ const normalizeAccountData = (accountData: AccountDataObject | AccountDataTuple 
 
 export function useTokenLogic(tokenAddress: string) {
   const account = useActiveAccount();
-  const isAddressValid = !!tokenAddress && 
-                         tokenAddress !== "0x0000000000000000000000000000000000000000" && 
-                         tokenAddress !== "";
+  const isAddressValid = !!tokenAddress && tokenAddress !== "0x0000000000000000000000000000000000000000" && tokenAddress !== "";
   
   const tokenContract = useMemo(() => getContract({ 
-    client, 
-    chain, 
-    address: isAddressValid ? tokenAddress : "0x0000000000000000000000000000000000000000" 
+    client, chain, address: isAddressValid ? tokenAddress : "0x0000000000000000000000000000000000000000" 
   }), [tokenAddress, isAddressValid]);
 
   const cached = useMemo(() => isAddressValid ? getCachedMeta(tokenAddress) : null, [tokenAddress, isAddressValid]);
@@ -244,10 +205,7 @@ export function useTokenLogic(tokenAddress: string) {
     address: contractGemFun.address as `0x${string}`,
     abi: gemfunAbi as Abi,
     functionName: "getAccountData",
-    args:
-      isAddressValid && account?.address
-        ? [tokenAddress as `0x${string}`, account.address as `0x${string}`]
-        : undefined,
+    args: isAddressValid && account?.address ? [tokenAddress as `0x${string}`, account.address as `0x${string}`] : undefined,
     enabled: isAddressValid && !!account?.address,
     staleTime: 10_000,
   });
@@ -267,34 +225,19 @@ export function useTokenLogic(tokenAddress: string) {
   const stats = normalizedFullData?.stats || cached?.stats;
   const tokenCreator = normalizedFullData?.creator || cached?.creator;
 
-  const info: TokenInfo | null = stats
-    ? [
-        stats[0].toString() === "1" || stats[0] === true,
-        stats[1].toString() === "1" || stats[1] === true,
-        BigInt(stats[2] as any),
-        BigInt(stats[3] as any),
-        BigInt(stats[4] as any),
-      ]
-    : null;
+  const info: TokenInfo | null = stats ? [
+    stats[0].toString() === "1" || stats[0] === true,
+    stats[1].toString() === "1" || stats[1] === true,
+    BigInt(stats[2] as any), BigInt(stats[3] as any), BigInt(stats[4] as any),
+  ] : null;
 
-  const metadata = normalizeMetadata(
-      core?.logoHash || cached?.logo || "",
-      core?.description || cached?.desc || "",
-      meta
-  );
+  const metadata = normalizeMetadata(core?.logoHash || cached?.logo || "", core?.description || cached?.desc || "", meta);
 
   return {
-    account,
-    tokenContract,
-    hashBalance,
-    tokenBalance,
+    account, tokenContract, hashBalance, tokenBalance,
     name: core?.name || cached?.name || "Loading...",
     symbol: core?.symbol || cached?.symbol || "MEME",
-    info,
-    metadata,
-    pendingRewards: userStake.pendingRewards,
-    userStake,
-    tokenCreator,
+    info, metadata, pendingRewards: userStake.pendingRewards, userStake, tokenCreator,
     isCreator: !!account?.address && !!tokenCreator && account.address.toLowerCase() === (tokenCreator as string).toLowerCase(),
     isLoading: isAddressValid ? (!core && !cached && isLoadingFull) : false,
     refetchPending: () => { if (isAddressValid) { refetchFull(); refetchHash(); refetchTokenBalance(); refetchAccount(); } }

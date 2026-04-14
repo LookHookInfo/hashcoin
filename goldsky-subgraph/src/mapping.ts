@@ -1,6 +1,6 @@
 import { TokenCreated, Trade, Migrated, TokenRemoved, GemFun } from "../generated/GemFun/GemFun"
 import { Token, Trade as TradeEntity } from "../generated/schema"
-import { BigInt, store, Address, Bytes } from "@graphprotocol/graph-ts"
+import { BigInt, store, Bytes } from "@graphprotocol/graph-ts"
 
 export function handleTokenCreated(event: TokenCreated): void {
   let token = new Token(event.params.token.toHexString())
@@ -20,7 +20,6 @@ export function handleTokenCreated(event: TokenCreated): void {
     token.logoHash = Bytes.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000")
   }
 
-  // Синхронизируем начальные статы (включая покупку создателя при деплое)
   let statsData = contract.try_tokens(event.params.token)
   if (!statsData.reverted) {
       token.sold = statsData.value.getSold()
@@ -45,7 +44,6 @@ export function handleTokenCreated(event: TokenCreated): void {
 export function handleTrade(event: Trade): void {
   let token = Token.load(event.params.token.toHexString())
   if (token) {
-    // Обновляем через расчеты события для скорости
     if (event.params.isBuy) {
       token.raised = token.raised.plus(event.params.hashAmt)
       token.sold = token.sold.plus(event.params.memeAmt)
@@ -54,16 +52,12 @@ export function handleTrade(event: Trade): void {
       token.sold = token.sold.minus(event.params.memeAmt)
     }
     
-    // Но также проверяем флаги миграции напрямую
+    // Синхронизируем статус кривой (может завершиться в этом трейде)
     let contract = GemFun.bind(event.address)
     let statsData = contract.try_tokens(event.params.token)
     if (!statsData.reverted) {
-        token.isMigrated = statsData.value.getMigrated()
         token.isCurveCompleted = statsData.value.getCurveCompleted()
         token.miningReserve = statsData.value.getMiningReserve()
-        // На всякий случай синхронизируем точные значения sold/raised
-        token.sold = statsData.value.getSold()
-        token.raised = statsData.value.getRaised()
     }
 
     token.updatedAt = event.block.timestamp
@@ -75,7 +69,7 @@ export function handleTrade(event: Trade): void {
   trade.user = event.params.user
   trade.isBuy = event.params.isBuy
   trade.hashAmt = event.params.hashAmt
-  trade.memeAmt = event.params.memeAmt
+  trade.tradeAmt = event.params.memeAmt // Используем tradeAmt для ясности
   trade.timestamp = event.block.timestamp
   trade.save()
 }
@@ -84,12 +78,9 @@ export function handleMigrated(event: Migrated): void {
   let token = Token.load(event.params.token.toHexString())
   if (token) {
     token.isMigrated = true
+    token.isCurveCompleted = true
     token.save()
   }
-}
-
-export function handleTokenCreatedHandler(event: TokenCreated): void {
-    handleTokenCreated(event);
 }
 
 export function handleTokenRemoved(event: TokenRemoved): void {
