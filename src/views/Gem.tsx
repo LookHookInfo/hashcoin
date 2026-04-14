@@ -159,8 +159,8 @@ export default function Gem() {
           </Group>
         </Group>
 
-        {/* TOP LEADERS BLOCK */}
-        {!isLoading && topMcapTokens.length > 0 && !search && activeFilter === 'all' && (
+        {/* TOP LEADERS BLOCK - Always visible if not searching */}
+        {!isLoading && topMcapTokens.length > 0 && !search && (
             <Box>
                 <Group gap="xs" mb="md">
                     <IconTrophy size={20} color="gold" />
@@ -241,9 +241,9 @@ export default function Gem() {
 }
 
 function GemTokenFilterItem({ address, filter, lastActive, cachedMeta, onClick }: { address: string, filter: FilterType, lastActive?: number, cachedMeta: CachedGemTokenMeta | null, onClick: () => void }) {
-    const needsUserStats = filter === 'hold' || filter === 'mining';
+    // Включаем RPC всегда для точности процентов, как просил пользователь
     const { userStats, info, name, metadata, isLoading, triggerRefresh, lastSynced } = useTokenData(address, {
-        includeUserStats: needsUserStats,
+        includeUserStats: true, 
         initialMeta: cachedMeta,
     });
     
@@ -271,7 +271,8 @@ function GemTokenFilterItem({ address, filter, lastActive, cachedMeta, onClick }
 }
 
 function TopTokenCard({ address, cachedMeta, onClick }: { address: string, cachedMeta: CachedGemTokenMeta | null, onClick: () => void }) {
-    const { name, info, metadata, isLoading } = useTokenData(address, { includeUserStats: false, initialMeta: cachedMeta });
+    // Для лидеров тоже включаем RPC для точности Market Cap
+    const { name, info, metadata, isLoading } = useTokenData(address, { includeUserStats: true, initialMeta: cachedMeta });
     const mcap = info ? formatEther(info[3]) : '0';
     const logo = (metadata as any)?.[0] || "";
     const color = '#00d2ff';

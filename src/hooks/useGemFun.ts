@@ -2,7 +2,7 @@ import { useActiveAccount, useReadContract } from "thirdweb/react";
 import { contractGemFun } from "@/utils/contracts";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { fetchFromGoldsky, batchFetchBalances, type CachedGemTokenMeta } from "@/services/tokenService";
-import { useTokenLogic, normalizeMetadata } from "@/hooks/useTokenLogic";
+import { useTokenLogic, normalizeMetadata, calculateCurveProgress } from "@/hooks/useTokenLogic";
 import { readContract } from "thirdweb";
 
 export type { CachedGemTokenMeta } from "@/services/tokenService";
@@ -174,6 +174,8 @@ export function useTokenData(address: string, options?: { includeUserStats?: boo
         BigInt(meta.stats[4])
     ] : null);
 
+    const curveProgress = info ? calculateCurveProgress(info[2]) : 0;
+
     const metadata = (rpcMetadata[0] !== "" || rpcMetadata[1] !== "") ? rpcMetadata : normalizeMetadata(
         meta?.logo || "",
         meta?.desc || "",
@@ -186,6 +188,7 @@ export function useTokenData(address: string, options?: { includeUserStats?: boo
             hasMining: (userStake?.totalHashrate || 0n) > 0n,
         },
         info: info as [boolean, boolean, bigint, bigint, bigint] | null,
+        curveProgress,
         name,
         metadata,
         isLoading: shouldFetchRPC ? rpcLoading : false,

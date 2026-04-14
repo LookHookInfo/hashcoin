@@ -73,6 +73,13 @@ export function GemTokenDetails({ address, onClose, onTradeConfirmed }: Props) {
   const [mode, setMode] = useState<'buy' | 'sell'>('buy');
   const [sliderVal, setSliderVal] = useState(0);
 
+  // Автоматическое переключение на вкладку Mining для мигрировавших токенов
+  useEffect(() => {
+    if (info?.[0] && activeTab === 'trade') {
+        setActiveTab('mining');
+    }
+  }, [info?.[0]]);
+
   const handleSliderChange = (percent: number) => {
     setSliderVal(percent);
     let amountWei = 0n;

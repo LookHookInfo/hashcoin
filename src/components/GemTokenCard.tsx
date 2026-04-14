@@ -1,23 +1,23 @@
 import { Card, Image, Stack, Group, Text, Badge, Skeleton, Box } from '@mantine/core';
-import { getIpfsUrl, CURVE_SUPPLY, MINING_RESERVE } from '@/hooks/useTokenLogic';
+import { getIpfsUrl, calculateCurveProgress, calculateMiningProgress } from '@/hooks/useTokenLogic';
 
 export function GemTokenCard({ address, onClick, name, info, metadata, isLoading }: any) {
   const isMigrated = info?.[0] || false;
-  const sold = BigInt(info?.[2] || 0n);
-  const miningReserve = BigInt(info?.[4] || 0n);
-  
   const logoUrl = getIpfsUrl(metadata?.[0] || "");
 
-  // Просто считаем % от констант
-  let percentageDisplay = "";
-  if (isMigrated) {
-      const mined = MINING_RESERVE - miningReserve;
-      const p = Number(mined * 10000n / MINING_RESERVE) / 100;
-      percentageDisplay = `${p.toFixed(1)}%`;
-  } else {
-      const p = Number(sold * 10000n / CURVE_SUPPLY) / 100;
-      percentageDisplay = `${p.toFixed(1)}%`;
-  }
+  // АВТОМАТИЧЕСКИЙ ВЫБОР ПРОГРЕССА:
+  // До миграции показываем Bonding Curve (info[2] = sold)
+  // После миграции показываем Mining Progress (info[4] = miningReserve)
+  const getProgress = () => {
+    if (!info) return 0;
+    if (isMigrated) {
+        return calculateMiningProgress(info[4]);
+    }
+    return calculateCurveProgress(info[2]);
+  };
+
+  const progress = getProgress();
+  const percentageDisplay = `${progress.toFixed(1)}%`;
 
   return (
     <Card 

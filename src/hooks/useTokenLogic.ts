@@ -148,6 +148,35 @@ export const formatAmount = (val: string | number | bigint) => {
   }).format(num);
 };
 
+/**
+ * Shared logic to calculate Bonding Curve Progress percentage
+ */
+export const calculateCurveProgress = (sold: bigint | string | undefined) => {
+    if (!sold) return 0;
+    try {
+        const soldBig = typeof sold === 'bigint' ? sold : BigInt(sold);
+        const progress = Number(soldBig * 10000n / CURVE_SUPPLY) / 100;
+        return Math.min(progress, 100);
+    } catch {
+        return 0;
+    }
+};
+
+/**
+ * Shared logic to calculate Mining Progress percentage (how much is mined from reserve)
+ */
+export const calculateMiningProgress = (currentReserve: bigint | string | undefined) => {
+    if (!currentReserve) return 0;
+    try {
+        const reserveBig = typeof currentReserve === 'bigint' ? currentReserve : BigInt(currentReserve);
+        const mined = MINING_RESERVE > reserveBig ? MINING_RESERVE - reserveBig : 0n;
+        const progress = Number(mined * 10000n / MINING_RESERVE) / 100;
+        return Math.min(progress, 100);
+    } catch {
+        return 0;
+    }
+};
+
 const normalizeFullData = (fullData: FullDataObject | FullDataTuple | undefined): FullDataObject | null => {
   if (!fullData) return null;
   if (Array.isArray(fullData)) {
