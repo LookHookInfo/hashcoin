@@ -6,7 +6,7 @@ dataSources:
     name: GemFun
     network: base
     source:
-      address: "0x9A961648729ebCC2aa5388f6ddf391Fc64FDb542"
+      address: "0x25064346f8E910Ea710d93e15a0E24d0233e60F2"
       abi: GemFun
       startBlock: 43302000
     mapping:

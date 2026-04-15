@@ -4,7 +4,7 @@ import { contractGemFun } from "@/utils/contracts";
 import { client } from "@/lib/thirdweb/client";
 import { chain } from "@/lib/thirdweb/chain";
 
-const GOLDSKY_ENDPOINT = "https://api.goldsky.com/api/public/project_cmmp3iit7vqsd01wr182p5fzi/subgraphs/minighash/1.0.0/gn";
+const GOLDSKY_ENDPOINT = "https://api.goldsky.com/api/public/project_cmmp3iit7vqsd01wr182p5fzi/subgraphs/MiningHash/1.0.0/gn";
 
 export interface CachedGemTokenMeta {
     name: string; symbol: string; logo: string; desc: string;

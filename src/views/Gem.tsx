@@ -1,17 +1,13 @@
-import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
+﻿import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus, IconSearch, IconTrophy, IconFlame, IconWallet, IconPick, IconRocket } from '@tabler/icons-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useGemFun, useTokenData, type CachedGemTokenMeta } from '@/hooks/useGemFun';
 import { GemTokenCard } from '@/components/GemTokenCard';
-import { testHashFaucetContract } from '@/utils/contracts';
-import { prepareContractCall } from 'thirdweb';
 import { GemTokenDetails } from '@/components/GemTokenDetails';
 import { useActiveAccount } from 'thirdweb/react';
-import { formatEther, parseAbi } from 'viem';
+import { formatEther } from 'viem';
 import { formatAmount, getIpfsUrl } from '@/hooks/useTokenLogic';
-import { AppTransactionButton } from '@/components/AppTransactionButton';
-import { useAlchemyReadContract } from '@/hooks/useAlchemyRead';
 import { LaunchTokenModal } from '@/components/LaunchTokenModal';
 
 type FilterType = 'all' | 'hold' | 'mining' | 'migrated';
@@ -19,9 +15,6 @@ type FilterType = 'all' | 'hold' | 'mining' | 'migrated';
 const TOKENS_PER_PAGE = 20;
 const EMPTY_METADATA: [string, string, string, string, string, string] = ["", "", "", "", "", ""];
 const EMPTY_INFO: [boolean, boolean, bigint, bigint, bigint] = [false, false, 0n, 0n, 0n];
-const faucetAbi = parseAbi([
-  "function hasClaimed(address user) view returns (bool)",
-]);
 
 export default function Gem() {
   const account = useActiveAccount();
@@ -36,22 +29,11 @@ export default function Gem() {
   const isLoading = gemData.isLoading;
   const tokenActivity = gemData.tokenActivity || {};
   const bumpTokenActivity = gemData.bumpTokenActivity;
-  const userQuestStats = gemData.userStats;
   const refreshAll = gemData.refreshAll;
   const lists = gemData.lists;
 
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const { data: hasClaimed, refetch: refetchClaimed } = useAlchemyReadContract<typeof faucetAbi, "hasClaimed", [`0x${string}`], boolean>({
-    queryKey: ['test-hash-faucet', 'has-claimed', account?.address],
-    address: testHashFaucetContract.address as `0x${string}`,
-    abi: faucetAbi,
-    functionName: 'hasClaimed',
-    args: account?.address ? [account.address as `0x${string}`] : undefined,
-    enabled: !!account?.address,
-    staleTime: 60_000,
-  });
 
   const handleTokenTradeConfirmed = useCallback((address: string) => {
     bumpTokenActivity(address);
@@ -88,64 +70,16 @@ export default function Gem() {
           <div>
             <Group gap="xs" align="center">
               <Title order={1} c="white">GemFun</Title>
-              <Badge variant="filled" color="blue" size="sm" className="pulse-beta">MVP beta</Badge>
+              <Badge variant="filled" color="blue" size="sm" className="pulse-beta">Launchpad</Badge>
             </Group>
             <Box maw={600}>
               <Text c="dimmed">
                 Create and mine your own Gem tokens with HASH.
                 <Text span c="blue.4" fw={500}> Compete for the top spot!</Text>
-                <Text span c="red.4" fw={500}> Attention this is a TEST mode!</Text>
               </Text>
-              <Box mt={8}>
-                <Text size="xs" c="dimmed">
-                  Gem Fun:{' '}
-                  <Text span c="blue.3" style={{ fontFamily: 'monospace' }}>
-                    0x9A961648729eBCC2aa5388f6ddf391Fc64FDb542
-                  </Text>
-                </Text>
-                <Text size="xs" c="dimmed">
-                  Test Hash:{' '}
-                  <Text span c="blue.3" style={{ fontFamily: 'monospace' }}>
-                    0x81814Cd2EC975eAc745578066963DE4f8A7De293
-                  </Text>
-                </Text>
-                {account && (
-                    <Group gap="xs" mt={8}>
-                        <Badge variant="light" color="blue" size="sm" leftSection={<IconPlus size={10} />}>
-                            Created: {userQuestStats.tokensCount.toString()}
-                        </Badge>
-                        <Badge variant="light" color="green" size="sm" leftSection={<IconRocket size={10} />}>
-                            Migrated: {userQuestStats.migratedCount.toString()}
-                        </Badge>
-                    </Group>
-                )}
-              </Box>
             </Box>
           </div>
           <Group gap="md">
-            {account && !hasClaimed && (
-                <AppTransactionButton 
-                    transaction={() => prepareContractCall({
-                        contract: testHashFaucetContract,
-                        method: "function claim()",
-                        params: []
-                    })}
-                    onTransactionConfirmed={() => refetchClaimed()}
-                    style={{ 
-                        background: 'linear-gradient(45deg, #228be6 0%, #15aabf 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '0 20px',
-                        height: '42px',
-                        fontSize: '16px',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Get Test HASH
-                </AppTransactionButton>
-            )}
             <Button 
                 leftSection={<IconPlus size={20} />} 
                 size="lg" 
@@ -241,7 +175,6 @@ export default function Gem() {
 }
 
 function GemTokenFilterItem({ address, filter, lastActive, cachedMeta, onClick }: { address: string, filter: FilterType, lastActive?: number, cachedMeta: CachedGemTokenMeta | null, onClick: () => void }) {
-    // Включаем RPC всегда для точности процентов, как просил пользователь
     const { userStats, info, name, metadata, isLoading, triggerRefresh, lastSynced } = useTokenData(address, {
         includeUserStats: true, 
         initialMeta: cachedMeta,
@@ -271,7 +204,6 @@ function GemTokenFilterItem({ address, filter, lastActive, cachedMeta, onClick }
 }
 
 function TopTokenCard({ address, cachedMeta, onClick }: { address: string, cachedMeta: CachedGemTokenMeta | null, onClick: () => void }) {
-    // Для лидеров тоже включаем RPC для точности Market Cap
     const { name, info, metadata, isLoading } = useTokenData(address, { includeUserStats: true, initialMeta: cachedMeta });
     const mcap = info ? formatEther(info[3]) : '0';
     const logo = (metadata as any)?.[0] || "";

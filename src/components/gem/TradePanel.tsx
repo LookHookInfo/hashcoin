@@ -85,10 +85,13 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
   const needsMemeApprove = mode === 'sell' && amountBigInt !== null && (BigInt(memeAllowance || 0n)) < amountBigInt;
   
   const curveProgress = info ? Number(BigInt(info[2]) * 10000n / CURVE_SUPPLY) / 100 : 0;
-  const isCurveCompleted = curveProgress >= 99.99 || (info?.[1] || false);
+  // Trust ONLY the contract state for logic, not local math
+  const isCurveCompleted = info?.[1] || false;
   const isMigrated = info?.[0] || false;
   const canMigrate = isCurveCompleted && !isMigrated;
-  const canSubmitTrade = !!account && !isCurveCompleted && (mode === 'buy' ? (amountBigInt !== null && amountBigInt > 0n && amountBigInt <= remainingCurveSupply) : (amountBigInt !== null && amountBigInt > 0n && amountBigInt <= (tokenBalance || 0n) && amountBigInt <= soldOnCurve));
+  
+  // Trading is allowed until the contract flag is set OR it is already migrated
+  const canSubmitTrade = !!account && !isCurveCompleted && !isMigrated && (mode === 'buy' ? (amountBigInt !== null && amountBigInt > 0n && amountBigInt <= remainingCurveSupply) : (amountBigInt !== null && amountBigInt > 0n && amountBigInt <= (tokenBalance || 0n) && amountBigInt <= soldOnCurve));
 
   const handleConfirmed = () => {
     refetchPending();
@@ -155,7 +158,21 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
                     <Progress value={curveProgress} color="blue" size="xl" radius="xl" />
                 </Box>
                 {!isMigrated && (
-                    <AppTransactionButton size="md" disabled={!canMigrate} style={{ background: canMigrate ? 'linear-gradient(45deg, #007bff, #00d2ff)' : 'rgba(255, 255, 255, 0.05)', color: canMigrate ? 'white' : '#666', fontWeight: 700, animation: canMigrate ? 'pulse 2s infinite' : 'none' }} leftSection={<IconRocket size={18} />} onTransactionConfirmed={refetchPending} transaction={() => prepareContractCall({ contract: contractGemFun, method: "function migrate(address tokenAddr)", params: [address] })}>
+                    <AppTransactionButton 
+                        size="md" 
+                        disabled={!canMigrate} 
+                        style={{ background: canMigrate ? 'linear-gradient(45deg, #007bff, #00d2ff)' : 'rgba(255, 255, 255, 0.05)', color: canMigrate ? 'white' : '#666', fontWeight: 700, animation: canMigrate ? 'pulse 2s infinite' : 'none' }} 
+                        leftSection={<IconRocket size={18} />} 
+                        onTransactionConfirmed={refetchPending} 
+                        transaction={() => {
+                            console.log("Migrating token:", address);
+                            return prepareContractCall({ 
+                                contract: contractGemFun, 
+                                method: "function migrate(address tokenAddr)", 
+                                params: [address] 
+                            });
+                        }}
+                    >
                         Migrate
                     </AppTransactionButton>
                 )}
@@ -165,4 +182,5 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
         </Box>
     </Stack>
   );
+
 }

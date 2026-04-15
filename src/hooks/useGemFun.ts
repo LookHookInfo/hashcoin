@@ -1,4 +1,4 @@
-import { useActiveAccount, useReadContract } from "thirdweb/react";
+import { useActiveAccount } from "thirdweb/react";
 import { contractGemFun } from "@/utils/contracts";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { fetchFromGoldsky, batchFetchBalances, type CachedGemTokenMeta } from "@/services/tokenService";
@@ -19,20 +19,6 @@ export function useGemFun() {
     hold: [], mining: [], migrated: [], active: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  const isFirstLoad = useRef(true);
-
-  const { data: tokensCount } = useReadContract({ 
-    contract: contractGemFun, 
-    method: "function userTokensCount(address) view returns (uint256)", 
-    params: [account?.address || "0x0000000000000000000000000000000000000000"], 
-    queryOptions: { enabled: !!account?.address } 
-  });
-  const { data: migratedCount } = useReadContract({ 
-    contract: contractGemFun, 
-    method: "function userMigratedCount(address) view returns (uint256)", 
-    params: [account?.address || "0x0000000000000000000000000000000000000000"], 
-    queryOptions: { enabled: !!account?.address } 
-  });
 
   const fetchTokens = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
@@ -97,7 +83,6 @@ export function useGemFun() {
               holdList = addresses.filter((addr: string) => (balances[addr] || 0n) > 0n);
 
               // 2. Для майнинга проверяем только мигрировавшие токены (их обычно мало)
-              // Используем последовательный опрос с паузой, если их много, или просто Promise.all если мало
               if (migrated.length > 0) {
                   const miningChecks = await Promise.all(migrated.map(async (addr: string) => {
                       try {
@@ -153,13 +138,11 @@ export function useGemFun() {
     lists,
     tokenActivity,
     bumpTokenActivity: (addr: string) => fetchTokens(true),
-    userStats: { tokensCount: tokensCount || 0n, migratedCount: migratedCount || 0n },
     refreshAll: () => fetchTokens(false)
   };
 }
 
 export function useTokenData(address: string, options?: { includeUserStats?: boolean, initialMeta?: CachedGemTokenMeta | null }) {
-    // Включаем RPC только если адрес валидный И мы не получили статы из общего списка
     const shouldFetchRPC = !!options?.includeUserStats && !!address;
     const { userStake, info: rpcInfo, name: rpcName, metadata: rpcMetadata, isLoading: rpcLoading, refetchPending } = useTokenLogic(shouldFetchRPC ? address : "");
 
