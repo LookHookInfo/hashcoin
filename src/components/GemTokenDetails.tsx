@@ -1,8 +1,7 @@
-import { Modal, Tabs, Stack, Group, Text, Button, Box, ActionIcon, Loader, Center, Tooltip, TextInput } from '@mantine/core';
+﻿import { Modal, Tabs, Stack, Group, Text, Button, Box, ActionIcon, Loader, Center, Tooltip, TextInput } from '@mantine/core';
 import { IconChartLine, IconPick, IconArrowLeft, IconCopy, IconCheck } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { useTokenLogic, getIpfsUrl } from '@/hooks/useTokenLogic';
-import { useActiveAccount } from 'thirdweb/react';
 import { useClipboard, useDisclosure } from '@mantine/hooks';
 import { useDisplayName } from '@/hooks/useNameContract';
 import { WhitepaperModal } from './WhitepaperModal';

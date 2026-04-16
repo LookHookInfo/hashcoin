@@ -20,6 +20,15 @@ export function handleTokenCreated(event: TokenCreated): void {
     token.logoHash = Bytes.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000")
   }
 
+  // Fetch Metadata
+  let metaData = contract.try_tokenMetadata(event.params.token)
+  if (!metaData.reverted) {
+    token.website = metaData.value.getWebsite()
+    token.twitter = metaData.value.getTwitter()
+    token.telegram = metaData.value.getTelegram()
+    token.guild = metaData.value.getGuild()
+  }
+
   let statsData = contract.try_tokens(event.params.token)
   if (!statsData.reverted) {
       token.sold = statsData.value.getSold()
@@ -69,7 +78,7 @@ export function handleTrade(event: Trade): void {
   trade.user = event.params.user
   trade.isBuy = event.params.isBuy
   trade.hashAmt = event.params.hashAmt
-  trade.tradeAmt = event.params.memeAmt // Используем tradeAmt для ясности
+  trade.memeAmt = event.params.memeAmt 
   trade.timestamp = event.block.timestamp
   trade.save()
 }

@@ -9,6 +9,7 @@ import { upload } from '@/utils/ipfs';
 import { contractGemFun, hashcoinContract } from '@/utils/contracts';
 import { formatAmount } from '@/hooks/useTokenLogic';
 import { useDebouncedValue } from '@mantine/hooks';
+import { AppTransactionButton } from './AppTransactionButton';
 
 const CURVE_SUPPLY_WEI = 300_000_000n * 10n ** 18n;
 const PERCENT_TENTHS_BASE = 1000n;
@@ -107,7 +108,7 @@ export function LaunchTokenModal({ opened, onClose, onSuccess }: Props) {
             const approveTx = prepareContractCall({
                 contract: hashcoinContract,
                 method: "function approve(address spender, uint256 amount)",
-                params: [contractGemFun.address, 10000000n * 10n ** 18n] // 10 Million HASH
+                params: [contractGemFun.address, 100000000n * 10n ** 18n] // 100 Million HASH
             });
             await sendAndConfirmTransaction({ transaction: approveTx, account });
             await refetchAllowance();
@@ -199,17 +200,27 @@ export function LaunchTokenModal({ opened, onClose, onSuccess }: Props) {
 
           <Group justify="flex-end" mt="md">
             <Button variant="default" onClick={handleModalClose} disabled={isProcessing}>Cancel</Button>
-            <Button
+            <AppTransactionButton
                 size="md"
-                variant="gradient"
-                gradient={{ from: 'blue', to: 'cyan' }}
                 disabled={!isReady || isProcessing}
-                onClick={handleLaunch}
+                transaction={handleLaunch}
+                onTransactionConfirmed={() => {
+                    onSuccess();
+                    handleModalClose();
+                }}
+                onError={(err) => console.error("Launch failed:", err)}
                 leftSection={isProcessing ? <IconLoader2 className="spinning" size={18} /> : <IconRocket size={18} />}
-                style={{ fontWeight: 700, minWidth: 150 }}
+                style={{ 
+                    background: 'linear-gradient(45deg, #007bff, #00d2ff)', 
+                    color: 'white', 
+                    border: 'none', 
+                    fontWeight: 700, 
+                    minWidth: 150,
+                    opacity: (!isReady || isProcessing) ? 0.5 : 1
+                }}
             >
                 {isProcessing ? "Processing..." : "Launch Token"}
-            </Button>
+            </AppTransactionButton>
           </Group>
         </Stack>
     </Modal>

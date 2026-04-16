@@ -132,14 +132,24 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
                 style={{ background: mode === 'buy' ? 'linear-gradient(45deg, #40c057, #82c91e)' : 'linear-gradient(45deg, #fa5252, #ff8787)', color: 'white', border: 'none', fontWeight: 700, opacity: canSubmitTrade ? 1 : 0.5 }}
                 onTransactionConfirmed={handleConfirmed}
                 transaction={async () => {
+                    if (!account) throw new Error("Connect wallet");
+                    
                     if (mode === 'buy') {
                         if (needsHashApprove) {
-                            await sendAndConfirmTransaction({ transaction: prepareApprove({ contract: hashcoinContract, spender: contractGemFun.address, amount: (expectedHash * 2n).toString() }), account });
+                            await sendAndConfirmTransaction({ 
+                                transaction: prepareApprove({ contract: hashcoinContract, spender: contractGemFun.address, amount: (expectedHash * 100n).toString() }), 
+                                account 
+                            });
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                         }
                         return prepareContractCall({ contract: contractGemFun, method: "function buy(address tokenAddr, uint256 memeOut, uint256 maxHashIn)", params: [address, amountBigInt!, (expectedHash * SLIPPAGE.BUY_BPS) / SLIPPAGE.BASE] });
                     } else {
                         if (needsMemeApprove) {
-                            await sendAndConfirmTransaction({ transaction: prepareApprove({ contract: getContract({ client, chain, address }), spender: contractGemFun.address, amount: (amountBigInt! * 2n).toString() }), account });
+                            await sendAndConfirmTransaction({ 
+                                transaction: prepareApprove({ contract: getContract({ client, chain, address }), spender: contractGemFun.address, amount: (amountBigInt! * 100n).toString() }), 
+                                account 
+                            });
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                         }
                         return prepareContractCall({ contract: contractGemFun, method: "function sell(address tokenAddr, uint256 memeIn, uint256 minHashOut)", params: [address, amountBigInt!, (expectedHash * SLIPPAGE.SELL_BPS) / SLIPPAGE.BASE] });
                     }
