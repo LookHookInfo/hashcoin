@@ -1,4 +1,3 @@
-import { alchemyRpcRequest } from "@/lib/alchemy/client";
 import { getContract, readContract } from "thirdweb";
 import { contractGemFun } from "@/utils/contracts";
 import { client } from "@/lib/thirdweb/client";
@@ -88,13 +87,43 @@ export async function fetchFromGoldsky(query: string) {
     }
 }
 
+// SAFE SYNC: Пакетное получение балансов через стандартный RPC (поддержка Ankr/Alchemy/etc)
 export async function batchFetchBalances(user: string, addresses: string[]) {
     try {
-        const res = await alchemyRpcRequest<any>('alchemy_getTokenBalances', [user, addresses]);
+        console.log(`[BatchFetch] Syncing ${addresses.length} tokens via standard RPC (Safe Sync)`);
         const balances: Record<string, bigint> = {};
-        res?.tokenBalances?.forEach((i: any) => balances[i.contractAddress.toLowerCase()] = BigInt(i.tokenBalance || '0'));
+        
+        // Разбиваем на пачки по 10 запросов, чтобы не "повесить" публичные RPC типа Ankr
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < addresses.length; i += BATCH_SIZE) {
+            const batch = addresses.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (addr) => {
+                try {
+                    const data = await readContract({
+                        contract: contractGemFun,
+                        method: "function getAccountData(address tokenAddr, address user) view returns (uint256 walletBalance, uint256 totalHashrate, uint256 pendingRewards, uint256[6] stakedItems)",
+                        params: [addr, user]
+                    }) as any;
+                    
+                    const bal = data[0] || 0n;
+                    if (bal > 0n) {
+                        balances[addr.toLowerCase()] = bal;
+                    }
+                } catch { /* игнорируем ошибки отдельных токенов */ }
+            }));
+            
+            // Микро-пауза между пачками для стабильности на Ankr
+            if (i + BATCH_SIZE < addresses.length) {
+                await new Promise(r => setTimeout(r, 100));
+            }
+        }
+        
+        console.log(`[BatchFetch] Found ${Object.keys(balances).length} tokens with balance`);
         return balances;
-    } catch { return {}; }
+    } catch (err) { 
+        console.error("[BatchFetch] Critical error:", err);
+        return {}; 
+    }
 }
 
 export async function syncTokenFullData(addr: string, user?: string) {
@@ -103,11 +132,8 @@ export async function syncTokenFullData(addr: string, user?: string) {
         const data = await readContract({ contract: contractGemFun, method: "function getTokenFullData(address token) view returns ((string name, string symbol, bytes32 logoHash, string description) core, (string website, string twitter, string telegram, string guild) meta, address creator, uint256[5] stats)", params: [addr] }) as any;
         store.data[addrL] = { stats: data[3], meta: { core: data[0], meta: data[1] }, timestamp: Date.now() };
         if (user) {
-            const [bal, acc] = await Promise.all([
-                readContract({ contract: getContract({ client, chain, address: addr }), method: "function balanceOf(address) view returns (uint256)", params: [user] }),
-                readContract({ contract: contractGemFun, method: "function getAccountData(address tokenAddr, address user) view returns (uint256 walletBalance, uint256 totalHashrate, uint256 pendingRewards, uint256[6] stakedItems)", params: [addr, user] })
-            ]);
-            store.data[addrL].user = { balance: bal, hashrate: acc[1] };
+            const acc = await readContract({ contract: contractGemFun, method: "function getAccountData(address tokenAddr, address user) view returns (uint256 walletBalance, uint256 totalHashrate, uint256 pendingRewards, uint256[6] stakedItems)", params: [addr, user] }) as any;
+            store.data[addrL].user = { balance: acc[0], hashrate: acc[1] };
         }
         notify();
     } catch {}

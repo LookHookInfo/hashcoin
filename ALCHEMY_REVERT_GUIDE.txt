@@ -1,0 +1,45 @@
+ИНСТРУКЦИЯ: ВОЗВРАТ НА ALCHEMY (МАКСИМАЛЬНАЯ ЭКОНОМИЯ RPC)
+======================================================
+
+Если вы решите снова использовать Alchemy (https://base-mainnet.g.alchemy.com/v2/...) 
+и захотите максимально снизить нагрузку на лимиты, выполните два шага:
+
+ШАГ 1: Обновите .env
+--------------------
+Убедитесь, что в переменной VITE_ALCHEMY_BASE_RPC_URL указана ссылка от Alchemy.
+
+ШАГ 2: Замените функцию в src/services/tokenService.ts
+------------------------------------------------------
+Верните использование метода 'alchemy_getTokenBalances'. Этот метод позволяет Alchemy 
+самостоятельно проверить балансы всех токенов за 1 системный запрос.
+
+1. Добавьте импорт в начало файла:
+   import { alchemyRpcRequest } from "@/lib/alchemy/client";
+
+2. Замените функцию batchFetchBalances на эту:
+
+export async function batchFetchBalances(user: string, addresses: string[]) {
+    try {
+        // Alchemy делает всю работу за нас одним запросом к своему индексу
+        const res = await alchemyRpcRequest<any>('alchemy_getTokenBalances', [user, addresses]);
+        const balances: Record<string, bigint> = {};
+        
+        res?.tokenBalances?.forEach((i: any) => {
+            const bal = BigInt(i.tokenBalance || '0');
+            if (bal > 0n) {
+                balances[i.contractAddress.toLowerCase()] = bal;
+            }
+        });
+        
+        return balances;
+    } catch (err) { 
+        console.error("Alchemy Batch error:", err);
+        return {}; 
+    }
+}
+
+ПОЧЕМУ ЭТО ЭКОНОМИТ RPC:
+------------------------
+В текущей версии (Safe Sync) мы опрашиваем контракт для каждого токена (пачками по 10). 
+Alchemy же использует свою внутреннюю базу данных (индексатор), что позволяет узнать 
+состояние сотен токенов мгновенно и без лишних вызовов смарт-контракта.

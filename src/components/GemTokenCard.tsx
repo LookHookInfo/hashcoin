@@ -1,7 +1,8 @@
 import { Card, Image, Stack, Group, Text, Badge, Skeleton, Box } from '@mantine/core';
 import { getIpfsUrl, calculateCurveProgress, calculateMiningProgress } from '@/hooks/useTokenLogic';
+import { IconFlame } from '@tabler/icons-react';
 
-export function GemTokenCard({ address, onClick, name, info, metadata, isLoading }: any) {
+export function GemTokenCard({ address, onClick, name, info, metadata, isLoading, isHot }: any) {
   const isMigrated = info?.[0] || false;
   const logoUrl = getIpfsUrl(metadata?.[0] || "");
 
@@ -29,8 +30,12 @@ export function GemTokenCard({ address, onClick, name, info, metadata, isLoading
       style={{ 
         cursor: 'pointer', 
         backgroundColor: 'rgba(255,255,255,0.02)',
-        transition: 'all 0.2s ease',
-        height: '100%'
+        transition: 'all 0.3s ease',
+        height: '100%',
+        borderColor: isHot ? 'rgba(255, 165, 0, 0.8)' : undefined,
+        boxShadow: isHot ? '0 0 15px rgba(255, 165, 0, 0.3)' : undefined,
+        transform: isHot ? 'scale(1.02)' : 'scale(1)',
+        zIndex: isHot ? 10 : 1
       }}
       className="gem-card-hover"
     >
@@ -48,6 +53,17 @@ export function GemTokenCard({ address, onClick, name, info, metadata, isLoading
                 alt={name} 
                 fit="contain"
              />
+             {isHot && (
+                 <Badge 
+                    variant="filled" 
+                    color="orange" 
+                    size="xs" 
+                    leftSection={<IconFlame size={10} />}
+                    style={{ position: 'absolute', top: 5, left: 5, zIndex: 2, animation: 'pulse 1.5s infinite' }}
+                >
+                    TRADING
+                </Badge>
+             )}
              {isMigrated && (
                  <Badge 
                     variant="filled" 
@@ -60,7 +76,7 @@ export function GemTokenCard({ address, onClick, name, info, metadata, isLoading
              )}
           </Box>
           <Group justify="space-between" wrap="nowrap" gap={4}>
-            <Text fw={700} size="sm" truncate style={{ flex: 1 }}>{name || 'Unnamed'}</Text>
+            <Text fw={700} size="sm" truncate style={{ flex: 1 }} c={isHot ? "orange.4" : "white"}>{name || 'Unnamed'}</Text>
             <Text fw={800} size="sm" c={isMigrated ? "green.4" : "blue.4"} style={{ whiteSpace: 'nowrap' }}>
                 {percentageDisplay}
             </Text>

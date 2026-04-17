@@ -1,7 +1,7 @@
-﻿import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
+import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus, IconSearch, IconTrophy, IconFlame, IconWallet, IconPick, IconRocket } from '@tabler/icons-react';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useGemFun, useTokenData, type CachedGemTokenMeta } from '@/hooks/useGemFun';
 import { GemTokenCard } from '@/components/GemTokenCard';
 import { GemTokenDetails } from '@/components/GemTokenDetails';
@@ -23,30 +23,22 @@ export default function Gem() {
   const [activeFilter, setFilter] = useState<FilterType>('all');
 
   const gemData = useGemFun();
-  const tokenAddresses = gemData.tokenAddresses || [];
   const tokenIndex = gemData.tokenIndex || {};
   const topMcapTokens = gemData.topMcapTokens || [];
   const isLoading = gemData.isLoading;
-  const tokenActivity = gemData.tokenActivity || {};
-  const bumpTokenActivity = gemData.bumpTokenActivity;
-  const refreshAll = gemData.refreshAll;
   const lists = gemData.lists;
+  const bumpTokenActivity = gemData.bumpTokenActivity;
 
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const handleTokenTradeConfirmed = useCallback((address: string) => {
-    bumpTokenActivity(address);
-    setCurrentPage(1);
-  }, [bumpTokenActivity]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [search, activeFilter]);
 
-  // USE PRE-FILTERED LISTS: Instant tab switching
+  // Списки уже приходят отсортированными по активности из Goldsky + Live
   const filteredAddresses = useMemo(() => {
-    let baseList = tokenAddresses;
+    let baseList: string[] = [];
     if (activeFilter === 'all') baseList = lists.active;
     else if (activeFilter === 'hold') baseList = lists.hold;
     else if (activeFilter === 'mining') baseList = lists.mining;
@@ -55,7 +47,7 @@ export default function Gem() {
     if (!search) return baseList;
     const s = search.toLowerCase();
     return baseList.filter(addr => addr.toLowerCase().includes(s));
-  }, [lists, tokenAddresses, search, activeFilter]);
+  }, [lists, search, activeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAddresses.length / TOKENS_PER_PAGE));
   const pageAddresses = useMemo(() => {
@@ -93,7 +85,6 @@ export default function Gem() {
           </Group>
         </Group>
 
-        {/* TOP LEADERS BLOCK - Always visible if not searching */}
         {!isLoading && topMcapTokens.length > 0 && !search && (
             <Box>
                 <Group gap="xs" mb="md">
@@ -147,9 +138,9 @@ export default function Gem() {
                         key={addr} 
                         address={addr} 
                         filter={activeFilter}
-                        lastActive={tokenActivity[addr.toLowerCase()] || 0}
                         cachedMeta={tokenIndex[addr.toLowerCase()] || null}
                         onClick={() => setSelectedToken(addr)} 
+                        liveActivity={gemData.liveActivity}
                     />
                 ))}
             </SimpleGrid>
@@ -165,16 +156,23 @@ export default function Gem() {
 
       <Modal opened={!!selectedToken} onClose={() => setSelectedToken(null)} centered size="xl" styles={{ content: { backgroundColor: '#1a1b1e', color: 'white' }, header: { backgroundColor: '#1a1b1e', color: 'white' } }}>
         {selectedToken && (
-          <GemTokenDetails address={selectedToken} onClose={() => setSelectedToken(null)} onTradeConfirmed={handleTokenTradeConfirmed} />
+          <GemTokenDetails 
+            address={selectedToken} 
+            onClose={() => setSelectedToken(null)} 
+            onTradeConfirmed={(addr) => {
+                bumpTokenActivity(addr);
+                setCurrentPage(1);
+            }} 
+          />
         )}
       </Modal>
 
-      <LaunchTokenModal opened={opened} onClose={close} onSuccess={refreshAll} />
+      <LaunchTokenModal opened={opened} onClose={close} onSuccess={gemData.refreshAll} />
     </Container>
   );
 }
 
-function GemTokenFilterItem({ address, filter, lastActive, cachedMeta, onClick }: { address: string, filter: FilterType, lastActive?: number, cachedMeta: CachedGemTokenMeta | null, onClick: () => void }) {
+function GemTokenFilterItem({ address, filter, cachedMeta, onClick, liveActivity }: { address: string, filter: FilterType, cachedMeta: CachedGemTokenMeta | null, onClick: () => void, liveActivity?: Record<string, number> }) {
     const { userStats, info, name, metadata, isLoading, triggerRefresh, lastSynced } = useTokenData(address, {
         includeUserStats: true, 
         initialMeta: cachedMeta,
@@ -188,17 +186,20 @@ function GemTokenFilterItem({ address, filter, lastActive, cachedMeta, onClick }
 
     if (!matchesFilter) return null;
 
+    const lastActive = liveActivity?.[address.toLowerCase()] || 0;
+    const isHot = (Date.now() - lastActive) < 15000; // Активен в последние 15 сек
+
     return (
         <GemTokenCard 
             address={address} 
-            lastActive={lastActive} 
             onClick={onClick} 
             name={name || cachedMeta?.name || "..."} 
             info={info || EMPTY_INFO} 
             metadata={(metadata as [string, string, string, string, string, string]) || EMPTY_METADATA} 
             isLoading={isLoading} 
             onRefresh={triggerRefresh} 
-            lastSynced={lastSynced} 
+            lastSynced={lastSynced}
+            isHot={isHot} 
         />
     );
 }

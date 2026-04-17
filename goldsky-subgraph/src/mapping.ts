@@ -6,13 +6,15 @@ export function handleTokenCreated(event: TokenCreated): void {
   let token = new Token(event.params.token.toHexString())
   
   let contract = GemFun.bind(event.address)
-  let coreData = contract.try_tokenCore(event.params.token)
   
-  if (!coreData.reverted) {
-    token.name = coreData.value.getName()
-    token.symbol = coreData.value.getSymbol()
-    token.logoHash = coreData.value.getLogoHash()
-    token.description = coreData.value.getDescription()
+  // Используем try_ методы, но явно указываем, что нам нужны поля из возвращаемой структуры
+  let coreDataCall = contract.try_tokenCore(event.params.token)
+  if (!coreDataCall.reverted) {
+    let coreData = coreDataCall.value
+    token.name = coreData.getName()
+    token.symbol = coreData.getSymbol()
+    token.logoHash = coreData.getLogoHash()
+    token.description = coreData.getDescription()
   } else {
     token.name = "Unknown"
     token.symbol = "GEM"
@@ -21,12 +23,13 @@ export function handleTokenCreated(event: TokenCreated): void {
   }
 
   // Fetch Metadata
-  let metaData = contract.try_tokenMetadata(event.params.token)
-  if (!metaData.reverted) {
-    token.website = metaData.value.getWebsite()
-    token.twitter = metaData.value.getTwitter()
-    token.telegram = metaData.value.getTelegram()
-    token.guild = metaData.value.getGuild()
+  let metaDataCall = contract.try_tokenMetadata(event.params.token)
+  if (!metaDataCall.reverted) {
+    let metaData = metaDataCall.value
+    token.website = metaData.getWebsite()
+    token.twitter = metaData.getTwitter()
+    token.telegram = metaData.getTelegram()
+    token.guild = metaData.getGuild()
   }
 
   let statsData = contract.try_tokens(event.params.token)
