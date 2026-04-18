@@ -50,6 +50,7 @@ export function handleTokenCreated(event: TokenCreated): void {
   token.creator = event.params.creator
   token.createdAt = event.block.timestamp
   token.updatedAt = event.block.timestamp
+  token.lastTradeAt = BigInt.fromI32(0)
   token.save()
 }
 
@@ -73,6 +74,7 @@ export function handleTrade(event: Trade): void {
     }
 
     token.updatedAt = event.block.timestamp
+    token.lastTradeAt = event.block.timestamp
     token.save()
   }
 

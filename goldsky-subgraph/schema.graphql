@@ -19,6 +19,7 @@ type Token @entity {
   
   createdAt: BigInt!
   updatedAt: BigInt!
+  lastTradeAt: BigInt!
 }
 
 type Trade @entity {

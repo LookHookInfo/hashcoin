@@ -48,7 +48,7 @@ export async function fetchFromGoldsky(query: string) {
 
         if (!addresses || addresses.length === 0) return { tokens: [] };
 
-        const tokens = await Promise.all(addresses.map(async (addr) => {
+        const tokens = await Promise.all(addresses.map(async (addr, i) => {
             try {
                 const data = await readContract({
                     contract: contractGemFun,
@@ -72,7 +72,9 @@ export async function fetchFromGoldsky(query: string) {
                     isMigrated: data[3][0] === 1n || data[3][0] === true,
                     isCurveCompleted: data[3][1] === 1n || data[3][1] === true,
                     creator: data[2],
-                    updatedAt: Math.floor(Date.now() / 1000).toString()
+                    // Используем стабильное время, чтобы не ломать сортировку
+                    createdAt: "1710000000", 
+                    updatedAt: data[3][3] > 0n ? "1720000000" : "1710000000"
                 };
             } catch (e) {
                 console.error(`Error fetching RPC data for token ${addr}:`, e);

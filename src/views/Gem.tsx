@@ -204,15 +204,27 @@ function GemTokenFilterItem({ address, filter, cachedMeta, onClick, liveActivity
     );
 }
 
-function TopTokenCard({ address, cachedMeta, onClick }: { address: string, cachedMeta: CachedGemTokenMeta | null, onClick: () => void }) {
+function TopTokenCard({ address, cachedMeta, onClick, isActivity, isHot }: { address: string, cachedMeta: CachedGemTokenMeta | null, onClick: () => void, isActivity?: boolean, isHot?: boolean }) {
     const { name, info, metadata, isLoading } = useTokenData(address, { includeUserStats: true, initialMeta: cachedMeta });
     const mcap = info ? formatEther(info[3]) : '0';
     const logo = (metadata as any)?.[0] || "";
-    const color = '#00d2ff';
+    const color = isActivity ? 'orange' : '#00d2ff';
+    const Icon = isActivity ? IconFlame : IconTrophy;
 
     return (
         <Paper p="md" withBorder onClick={onClick} style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: color, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
-            <Box style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}><IconTrophy size={80} color={color} /></Box>
+            {isHot && (
+                <Badge 
+                    variant="filled" 
+                    color="red" 
+                    size="xs" 
+                    style={{ position: 'absolute', top: 5, left: 5, zIndex: 2, fontSize: '8px', padding: '0 4px' }}
+                    className="pulse-beta"
+                >
+                    LIVE
+                </Badge>
+            )}
+            <Box style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}><Icon size={80} color={color} /></Box>
             <Group wrap="nowrap">
                 <Box style={{ position: 'relative' }}>
                     <Box w={60} h={60} style={{ borderRadius: '8px', overflow: 'hidden', backgroundColor: 'black' }}>
@@ -221,8 +233,8 @@ function TopTokenCard({ address, cachedMeta, onClick }: { address: string, cache
                 </Box>
                 <Stack gap={0} flex={1} style={{ minWidth: 0 }}>
                     <Text fw={700} c="white" truncate>{isLoading ? 'Loading...' : (name || 'Unnamed')}</Text>
-                    <Text size="xs" c="dimmed">Market Cap</Text>
-                    <Text fw={700} size="sm" c="blue">{formatAmount(mcap)} HASH</Text>
+                    <Text size="xs" c="dimmed">{isActivity ? 'Recently Traded' : 'Market Cap'}</Text>
+                    <Text fw={700} size="sm" c={isActivity ? 'orange' : 'blue'}>{formatAmount(mcap)} HASH</Text>
                 </Stack>
             </Group>
         </Paper>

@@ -49,7 +49,7 @@ export function useGemFun() {
         const query = `{
           tokens(first: 1000, orderBy: updatedAt, orderDirection: desc) {
             id, name, symbol, logoHash, description, website, twitter, telegram, guild,
-            sold, raised, miningReserve, isMigrated, isCurveCompleted, creator, createdAt, updatedAt
+            sold, raised, miningReserve, isMigrated, isCurveCompleted, creator, createdAt, updatedAt, lastTradeAt
           }
           trades(first: 50, orderBy: timestamp, orderDirection: desc) {
             token { id }
@@ -85,48 +85,7 @@ export function useGemFun() {
   const processedData = useMemo(() => {
       const index: Record<string, CachedGemTokenMeta> = {};
       
-      // 1. Карта глобальной активности из Goldsky Trades
-      const globalTradeMap: Record<string, number> = {};
-      lastTrades.forEach(tr => {
-          const addr = tr.token.id.toLowerCase();
-          const ts = Number(tr.timestamp) * 1000;
-          if (!globalTradeMap[addr] || ts > globalTradeMap[addr]) {
-              globalTradeMap[addr] = ts;
-          }
-      });
-
-      // 2. СОРТИРОВКА: Ищем максимальную метку времени из всех источников
-      // Источники: RPC (liveActivity), Goldsky Trades, Goldsky updatedAt
-      const sortedActive = [...rawTokens]
-          .filter(t => !t.isMigrated)
-          .sort((a, b) => {
-              const idA = a.id.toLowerCase();
-              const idB = b.id.toLowerCase();
-              
-              const liveA = liveActivity[idA] || 0;
-              const tradeA = globalTradeMap[idA] || 0;
-              const updateA = Number(a.updatedAt || 0) * 1000;
-              const finalA = Math.max(liveA, tradeA, updateA);
-
-              const liveB = liveActivity[idB] || 0;
-              const tradeB = globalTradeMap[idB] || 0;
-              const updateB = Number(b.updatedAt || 0) * 1000;
-              const finalB = Math.max(liveB, tradeB, updateB);
-
-              if (finalA !== finalB) return finalB - finalA;
-
-              const createA = Number(a.createdAt || 0) * 1000;
-              const createB = Number(b.createdAt || 0) * 1000;
-              return createB - createA;
-          })
-          .map(t => t.id.toLowerCase());
-
-      const sortedMigrated = [...rawTokens]
-          .filter(t => t.isMigrated)
-          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
-          .map(t => t.id.toLowerCase());
-
-      // 3. Индекс
+      // 1. Индексация и подготовка данных
       rawTokens.forEach(t => {
           const addr = t.id.toLowerCase();
           const isMig = t.isMigrated === true || t.isMigrated === "true";
@@ -138,20 +97,59 @@ export function useGemFun() {
           };
       });
 
-      const hold = Object.keys(balances).filter(addr => balances[addr] > 0n);
-      const mining = hold.filter(addr => index[addr]?.stats[0] === "1");
+      // 2. ГЛОБАЛЬНАЯ СОРТИРОВКА (Pump Fun Style: Action over Existence)
+      const getActiveScore = (t: any) => {
+          const addr = t.id.toLowerCase();
+          const raised = BigInt(t.raised || 0);
+          const live = BigInt(liveActivity[addr] || 0);
+          const updatedAt = BigInt(t.updatedAt || 0) * 1000n;
+          const createdAt = BigInt(t.createdAt || 0) * 1000n;
 
-      const topMcap = [...rawTokens]
+          // ОПРЕДЕЛЯЕМ ЛИГУ
+          // Лига 2: Живой трейд прямо сейчас (Highest)
+          if (live > 0n) return 200_000_000_000_000_000n + live;
+
+          // Лига 1: Есть объем или активность в базе (Traded)
+          // Мы считаем активным, если raised > 0 ИЛИ updatedAt заметно больше createdAt
+          if (raised > 0n || (updatedAt > createdAt + 1000n)) {
+              return 100_000_000_000_000_000n + updatedAt;
+          }
+
+          // Лига 0: Просто созданный токен без торгов
+          return createdAt;
+      };
+
+      const sortedActive = [...rawTokens]
+          .filter(t => !t.isMigrated)
+          .sort((a, b) => {
+              const scoreA = getActiveScore(a);
+              const scoreB = getActiveScore(b);
+              if (scoreB > scoreA) return 1;
+              if (scoreB < scoreA) return -1;
+              return 0;
+          })
+          .map(t => t.id.toLowerCase());
+
+      const sortedMigrated = [...rawTokens]
+          .filter(t => t.isMigrated)
+          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+          .map(t => t.id.toLowerCase());
+
+      // ТОП по капе (Market Cap)
+      const topMcapTokens = [...rawTokens]
         .filter(t => !t.isMigrated)
         .sort((a, b) => Number(BigInt(b.raised || 0) - BigInt(a.raised || 0)))
         .slice(0, 3)
         .map(t => t.id.toLowerCase());
 
+      const hold = Object.keys(balances).filter(addr => balances[addr] > 0n);
+      const mining = hold.filter(addr => index[addr]?.stats[0] === "1");
+
       return { 
           tokenIndex: index, 
           lists: { active: sortedActive, migrated: sortedMigrated, hold, mining },
-          topMcapTokens: topMcap,
-          liveActivity // Прокидываем время последней активности для анимаций
+          topMcapTokens,
+          liveActivity 
       };
   }, [rawTokens, lastTrades, liveActivity, balances]);
 
