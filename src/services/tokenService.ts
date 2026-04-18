@@ -72,9 +72,9 @@ export async function fetchFromGoldsky(query: string) {
                     isMigrated: data[3][0] === 1n || data[3][0] === true,
                     isCurveCompleted: data[3][1] === 1n || data[3][1] === true,
                     creator: data[2],
-                    // Используем стабильное время, чтобы не ломать сортировку
-                    createdAt: "1710000000", 
-                    updatedAt: data[3][3] > 0n ? "1720000000" : "1710000000"
+                    // Создаем стабильные метки времени на основе индекса, чтобы новые были "свежее"
+                    createdAt: (1710000000 + i).toString(), 
+                    updatedAt: data[3][3] > 0n ? (1720000000 + i).toString() : (1710000000 + i).toString()
                 };
             } catch (e) {
                 console.error(`Error fetching RPC data for token ${addr}:`, e);
