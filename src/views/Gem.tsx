@@ -1,8 +1,8 @@
-import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
+﻿import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus, IconSearch, IconTrophy, IconFlame, IconWallet, IconPick, IconRocket } from '@tabler/icons-react';
 import { useState, useMemo, useEffect } from 'react';
-import { useGemFun, useTokenData, type CachedGemTokenMeta } from '@/hooks/useGemFun';
+import { useGemFun, type CachedGemTokenMeta } from '@/hooks/useGemFun';
 import { GemTokenCard } from '@/components/GemTokenCard';
 import { GemTokenDetails } from '@/components/GemTokenDetails';
 import { useActiveAccount } from 'thirdweb/react';
@@ -133,16 +133,35 @@ export default function Gem() {
             <Center py="xl"><Loader color="blue" /></Center>
             ) : (
             <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing="md">
-                {pageAddresses.map((addr) => (
-                    <GemTokenFilterItem 
-                        key={addr} 
-                        address={addr} 
-                        filter={activeFilter}
-                        cachedMeta={tokenIndex[addr.toLowerCase()] || null}
-                        onClick={() => setSelectedToken(addr)} 
-                        liveActivity={gemData.liveActivity}
-                    />
-                ))}
+                {pageAddresses.map((addr) => {
+                    const meta = tokenIndex[addr.toLowerCase()];
+                    if (!meta) return null; // Не рисуем, если нет данных (как в Top Mcap)
+
+                    const lastActive = gemData.liveActivity[addr.toLowerCase()] || 0;
+                    const isHot = (Date.now() - lastActive) < 15000;
+
+                    return (
+                        <GemTokenCard 
+                            key={addr}
+                            address={addr} 
+                            onClick={() => setSelectedToken(addr)} 
+                            name={meta.name} 
+                            info={[
+                                meta.stats[0] === "1", 
+                                meta.stats[1] === "1", 
+                                BigInt(meta.stats[2]), 
+                                BigInt(meta.stats[3]), 
+                                BigInt(meta.stats[4])
+                            ]} 
+                            metadata={[
+                                meta.logo, meta.desc, 
+                                meta.links.website, meta.links.twitter, 
+                                meta.links.telegram, meta.links.guild
+                            ]} 
+                            isHot={isHot} 
+                        />
+                    );
+                })}
             </SimpleGrid>
             )}
             
@@ -172,42 +191,11 @@ export default function Gem() {
   );
 }
 
-function GemTokenFilterItem({ address, filter, cachedMeta, onClick, liveActivity }: { address: string, filter: FilterType, cachedMeta: CachedGemTokenMeta | null, onClick: () => void, liveActivity?: Record<string, number> }) {
-    const { userStats, info, name, metadata, isLoading, triggerRefresh, lastSynced } = useTokenData(address, {
-        includeUserStats: true, 
-        initialMeta: cachedMeta,
-    });
-    
-    const isMigrated = info?.[0] || false;
-    const matchesFilter = (filter !== 'hold' || userStats.hasBalance) && 
-                         (filter !== 'mining' || userStats.hasMining) && 
-                         (filter !== 'migrated' || isMigrated) && 
-                         (filter !== 'all' || !isMigrated);
-
-    if (!matchesFilter) return null;
-
-    const lastActive = liveActivity?.[address.toLowerCase()] || 0;
-    const isHot = (Date.now() - lastActive) < 15000; // Активен в последние 15 сек
-
-    return (
-        <GemTokenCard 
-            address={address} 
-            onClick={onClick} 
-            name={name || cachedMeta?.name || "..."} 
-            info={info || EMPTY_INFO} 
-            metadata={(metadata as [string, string, string, string, string, string]) || EMPTY_METADATA} 
-            isLoading={isLoading} 
-            onRefresh={triggerRefresh} 
-            lastSynced={lastSynced}
-            isHot={isHot} 
-        />
-    );
-}
-
-function TopTokenCard({ address, cachedMeta, onClick, isActivity, isHot }: { address: string, cachedMeta: CachedGemTokenMeta | null, onClick: () => void, isActivity?: boolean, isHot?: boolean }) {
-    const { name, info, metadata, isLoading } = useTokenData(address, { includeUserStats: true, initialMeta: cachedMeta });
-    const mcap = info ? formatEther(info[3]) : '0';
-    const logo = (metadata as any)?.[0] || "";
+function TopTokenCard({ cachedMeta, onClick, isActivity, isHot }: { address: string, cachedMeta: CachedGemTokenMeta | null, onClick: () => void, isActivity?: boolean, isHot?: boolean }) {
+    const name = cachedMeta?.name || 'Unnamed';
+    const info = cachedMeta?.stats;
+    const mcap = info ? formatEther(BigInt(info[3])) : '0';
+    const logo = cachedMeta?.logo || "";
     const color = isActivity ? 'orange' : '#00d2ff';
     const Icon = isActivity ? IconFlame : IconTrophy;
 
@@ -232,7 +220,7 @@ function TopTokenCard({ address, cachedMeta, onClick, isActivity, isHot }: { add
                     </Box>
                 </Box>
                 <Stack gap={0} flex={1} style={{ minWidth: 0 }}>
-                    <Text fw={700} c="white" truncate>{isLoading ? 'Loading...' : (name || 'Unnamed')}</Text>
+                    <Text fw={700} c="white" truncate>{name}</Text>
                     <Text size="xs" c="dimmed">{isActivity ? 'Recently Traded' : 'Market Cap'}</Text>
                     <Text fw={700} size="sm" c={isActivity ? 'orange' : 'blue'}>{formatAmount(mcap)} HASH</Text>
                 </Stack>

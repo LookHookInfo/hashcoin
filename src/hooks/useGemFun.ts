@@ -1,7 +1,7 @@
 import { useActiveAccount } from "thirdweb/react";
 import { contractGemFun } from "@/utils/contracts";
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { fetchFromGoldsky, batchFetchBalances, type CachedGemTokenMeta } from "@/services/tokenService";
+import { fetchFromGoldsky, batchFetchBalances, batchFetchTokenMetadata, type CachedGemTokenMeta } from "@/services/tokenService";
 import { useTokenLogic, normalizeMetadata, calculateCurveProgress } from "@/hooks/useTokenLogic";
 import { watchContractEvents, prepareEvent, getContractEvents } from "thirdweb";
 
@@ -27,9 +27,9 @@ export function useGemFun() {
 
   // Живая активность
   const [liveActivity, setLiveActivity] = useState<Record<string, number>>({});
-  // Новые токены, пойманные "на лету" до индексации
-  const [injectedTokens, setInjectedTokens] = useState<Set<string>>(new Set());
-  // История активности напрямую из блокчейна (для глобальной синхронизации)
+  // Дополнительные метаданные из RPC (для тех, кого нет в сабграфе)
+  const [rpcMetadataIndex, setRpcMetadataIndex] = useState<Record<string, CachedGemTokenMeta>>({});
+  // История активности напрямую из блокчейна
   const [blockchainHistory, setBlockchainHistory] = useState<string[]>([]);
 
   // 1. Слушаем живые события (Trade + TokenCreated)
@@ -41,13 +41,7 @@ export function useGemFun() {
               events.forEach(event => {
                   const addr = (event.args.token as string).toLowerCase();
                   const now = Date.now();
-                  
                   setLiveActivity(prev => ({ ...prev, [addr]: now }));
-                  
-                  // Если это создание токена, помечаем его для инъекции в список
-                  if (event.eventName === "TokenCreated") {
-                      setInjectedTokens(prev => new Set(prev).add(addr));
-                  }
               });
           }
       });
@@ -68,56 +62,47 @@ export function useGemFun() {
           }
         }`;
         
-        // Запускаем Goldsky и прямые запросы к блокчейну параллельно
         const [data, events] = await Promise.all([
             fetchFromGoldsky(query),
             getContractEvents({
                 contract: contractGemFun,
                 events: [tradeEvent, tokenCreatedEvent]
-            }).catch(err => {
-                console.error("[LiveFeed] Blockchain events fetch error:", err);
-                return [];
-            })
+            }).catch(() => [])
         ]);
 
         const tokensFromData = data?.tokens || [];
-        
-        // 1. Обработка Goldsky
-        if (tokensFromData.length > 0) {
-            const goldskyIds = new Set(tokensFromData.map((t: any) => t.id.toLowerCase()));
-            setInjectedTokens(prev => {
-                const next = new Set(prev);
-                goldskyIds.forEach(id => next.delete(id as string));
-                return next;
-            });
-        }
         setRawTokens(tokensFromData);
         if (data?.trades) setLastTrades(data.trades);
 
-        // 2. Обработка прямых логов блокчейна (ВСЕГДА ПРИОРИТЕТ)
+        // 2. Обработка прямых логов блокчейна
+        const uniqueBlockchainAddrs: string[] = [];
         if (events && events.length > 0) {
-            const uniqueAddrs: string[] = [];
             const seen = new Set<string>();
-            
-            // Реверсируем, чтобы самые новые события были первыми
             const latestEvents = [...events].reverse();
-            
             latestEvents.forEach(ev => {
                 const addr = (ev.args.token as string).toLowerCase();
                 if (!seen.has(addr)) {
                     seen.add(addr);
-                    uniqueAddrs.push(addr);
+                    uniqueBlockchainAddrs.push(addr);
                 }
             });
-            
-            console.log(`[LiveFeed] Synced ${uniqueAddrs.length} recent tokens from blockchain logs`);
-            setBlockchainHistory(uniqueAddrs);
+            setBlockchainHistory(uniqueBlockchainAddrs);
+        }
+
+        // 3. ДООБОГАЩЕНИЕ (Backfill): Если токен есть в логах, но нет в Goldsky — тянем RPC
+        const goldskyIds = new Set(tokensFromData.map((t: any) => t.id.toLowerCase()));
+        const missingAddrs = uniqueBlockchainAddrs.filter(addr => !goldskyIds.has(addr));
+        
+        if (missingAddrs.length > 0) {
+            console.log(`[LiveFeed] Backfilling ${missingAddrs.length} tokens via RPC...`);
+            const meta = await batchFetchTokenMetadata(missingAddrs);
+            setRpcMetadataIndex(prev => ({ ...prev, ...meta }));
         }
 
         // Синхронизация балансов
-        if (account?.address && tokensFromData.length > 0) {
-            const addrs = tokensFromData.map((t: any) => t.id.toLowerCase());
-            const bals = await batchFetchBalances(account.address, addrs);
+        if (account?.address && (tokensFromData.length > 0 || uniqueBlockchainAddrs.length > 0)) {
+            const allAddrs = Array.from(new Set([...tokensFromData.map((t: any) => t.id.toLowerCase()), ...uniqueBlockchainAddrs]));
+            const bals = await batchFetchBalances(account.address, allAddrs);
             setBalances(bals);
         }
     } catch (err) {
@@ -136,48 +121,53 @@ export function useGemFun() {
   const processedData = useMemo(() => {
       const index: Record<string, CachedGemTokenMeta> = {};
       
-      // 1. Индексация
+      // Сначала наполняем из RPC (они могут быть свежее)
+      Object.assign(index, rpcMetadataIndex);
+
+      // Потом из Goldsky (основной массив)
       rawTokens.forEach(t => {
           const addr = t.id.toLowerCase();
           const isMig = t.isMigrated === true || t.isMigrated === "true";
+          
+          // Нормализуем метаданные (логотип может быть спрятан в описании)
+          const [logo, desc, web, tw, tg, guild] = normalizeMetadata(
+              t.logoHash || "", 
+              t.description || "", 
+              { website: t.website, twitter: t.twitter, telegram: t.telegram, guild: t.guild }
+          );
+
           index[addr] = {
-              name: t.name, symbol: t.symbol, logo: t.logoHash, desc: t.description,
-              links: { website: t.website || "", twitter: t.twitter || "", telegram: t.telegram || "", guild: t.guild || "" },
+              name: t.name, 
+              symbol: t.symbol, 
+              logo: logo, 
+              desc: desc,
+              links: { website: web, twitter: tw, telegram: tg, guild: guild },
               stats: [isMig ? "1" : "0", (t.isCurveCompleted || isMig) ? "1" : "0", t.sold, t.raised, t.miningReserve],
               creator: t.creator, fromGoldsky: true
           };
       });
 
-      // 2. ГЛОБАЛЬНЫЙ ПОРЯДОК (Blockchain Driven)
       const activeIds = new Set<string>();
       const globalOrder: string[] = [];
 
-      // Шаг 1: Живая активность (сессионная) - САМЫЙ ВЫСОКИЙ ПРИОРИТЕТ
+      // Приоритет 1: Живая активность (сессия)
       const liveAddrs = Object.keys(liveActivity).sort((a, b) => liveActivity[b] - liveActivity[a]);
       liveAddrs.forEach(addr => {
-          if (!activeIds.has(addr)) {
+          if (!activeIds.has(addr) && index[addr]) {
               activeIds.add(addr);
               globalOrder.push(addr);
           }
       });
 
-      // Шаг 2: Инжектированные токены (новые, еще не в сабграфе)
-      injectedTokens.forEach(addr => {
-          if (!activeIds.has(addr)) {
-              activeIds.add(addr);
-              globalOrder.push(addr);
-          }
-      });
-
-      // Шаг 3: История торгов из блокчейна (наш радикальный фундамент)
+      // Приоритет 2: История блокчейна
       blockchainHistory.forEach(addr => {
-          if (!activeIds.has(addr) && (index[addr] || injectedTokens.has(addr))) {
+          if (!activeIds.has(addr) && index[addr]) {
               activeIds.add(addr);
               globalOrder.push(addr);
           }
       });
 
-      // Шаг 4: История из Goldsky Trades (если они есть)
+      // Приоритет 3: Goldsky Trades
       lastTrades.forEach(tr => {
           const addr = tr.token.id.toLowerCase();
           if (!activeIds.has(addr) && index[addr]) {
@@ -186,20 +176,16 @@ export function useGemFun() {
           }
       });
 
-      // Шаг 5: Все остальные токены (по объему Mcap для солидности)
+      // Приоритет 4: Все остальные (Mcap + Creation)
       const remaining = [...rawTokens]
           .filter(t => !t.isMigrated)
           .sort((a, b) => {
-              // Сортировка: Сначала новые по createdAt, потом по raised
               const timeA = Number(a.createdAt || 0);
               const timeB = Number(b.createdAt || 0);
-              if (timeB !== timeA) return timeB - timeA;
-
+              if (Math.abs(timeB - timeA) > 60) return timeB - timeA;
               const rA = BigInt(a.raised || 0);
               const rB = BigInt(b.raised || 0);
-              if (rB > rA) return 1;
-              if (rA > rB) return -1;
-              return 0;
+              return rB > rA ? 1 : -1;
           });
 
       remaining.forEach(t => {
@@ -211,24 +197,12 @@ export function useGemFun() {
       });
 
       const sortedActive = globalOrder;
-
-      const sortedMigrated = [...rawTokens]
-          .filter(t => t.isMigrated)
-          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
-          .map(t => t.id.toLowerCase());
-
-      // ТОП по капе (Market Cap) - только для виджета "Топ 3"
-      const topMcapTokens = [...rawTokens]
-        .filter(t => !t.isMigrated)
-        .sort((a, b) => {
+      const sortedMigrated = [...rawTokens].filter(t => t.isMigrated).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).map(t => t.id.toLowerCase());
+      const topMcapTokens = [...rawTokens].filter(t => !t.isMigrated).sort((a, b) => {
             const rA = BigInt(a.raised || 0);
             const rB = BigInt(b.raised || 0);
-            if (rB > rA) return 1;
-            if (rA > rB) return -1;
-            return 0;
-        })
-        .slice(0, 3)
-        .map(t => t.id.toLowerCase());
+            return rB > rA ? 1 : -1;
+      }).slice(0, 3).map(t => t.id.toLowerCase());
 
       const hold = Object.keys(balances).filter(addr => balances[addr] > 0n);
       const mining = hold.filter(addr => index[addr]?.stats[0] === "1");
@@ -239,15 +213,14 @@ export function useGemFun() {
           topMcapTokens,
           liveActivity 
       };
-  }, [rawTokens, lastTrades, liveActivity, balances]);
+  }, [rawTokens, lastTrades, liveActivity, balances, rpcMetadataIndex, blockchainHistory]);
 
   return {
     isLoading,
     ...processedData,
     bumpTokenActivity: (addr: string) => {
         const addrL = addr.toLowerCase();
-        const now = Date.now();
-        setLiveActivity(prev => ({ ...prev, [addrL]: now }));
+        setLiveActivity(prev => ({ ...prev, [addrL]: Date.now() }));
     },
     refreshAll: () => fetchTokens(false)
   };

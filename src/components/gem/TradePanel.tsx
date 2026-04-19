@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { formatEther, parseEther } from 'viem';
 import { prepareContractCall, sendAndConfirmTransaction, getContract } from 'thirdweb';
 import { approve as prepareApprove } from "thirdweb/extensions/erc20";
-import { useActiveAccount } from 'thirdweb/react';
 import { contractGemFun, hashcoinContract } from '@/utils/contracts';
 import { client } from "@/lib/thirdweb/client";
 import { chain } from "@/lib/thirdweb/chain";
@@ -175,7 +174,7 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
                         leftSection={<IconRocket size={18} />} 
                         onTransactionConfirmed={refetchPending} 
                         transaction={() => {
-                            console.log("Migrating token:", address);
+                            console.log("Launching TGE for token:", address);
                             return prepareContractCall({ 
                                 contract: contractGemFun, 
                                 method: "function migrate(address tokenAddr)", 
@@ -183,10 +182,10 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
                             });
                         }}
                     >
-                        Migrate
+                        TGE
                     </AppTransactionButton>
                 )}
-                {isMigrated && <Button size="md" disabled variant="outline" color="blue" leftSection={<IconRocket size={18} />}>Migrated</Button>}
+                {isMigrated && <Button size="md" disabled variant="outline" color="blue" leftSection={<IconRocket size={18} />}>TGE Live</Button>}
             </Group>
             <Text size="xs" fw={700} c="blue" ta="right" mt={5}>{curveProgress.toFixed(1)}%</Text>
         </Box>

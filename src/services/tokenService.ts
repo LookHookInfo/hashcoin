@@ -1,7 +1,5 @@
-import { getContract, readContract } from "thirdweb";
+import { readContract } from "thirdweb";
 import { contractGemFun } from "@/utils/contracts";
-import { client } from "@/lib/thirdweb/client";
-import { chain } from "@/lib/thirdweb/chain";
 
 const GOLDSKY_ENDPOINT = "https://api.goldsky.com/api/public/project_cmmp3iit7vqsd01wr182p5fzi/subgraphs/MiningHash/1.0.0/gn";
 
@@ -125,6 +123,58 @@ export async function batchFetchBalances(user: string, addresses: string[]) {
     } catch (err) { 
         console.error("[BatchFetch] Critical error:", err);
         return {}; 
+    }
+}
+
+export async function batchFetchTokenMetadata(addresses: string[]) {
+    try {
+        const metadata: Record<string, CachedGemTokenMeta> = {};
+        const BATCH_SIZE = 15;
+        
+        for (let i = 0; i < addresses.length; i += BATCH_SIZE) {
+            const batch = addresses.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (addr) => {
+                try {
+                    const data = await readContract({
+                        contract: contractGemFun,
+                        method: "function getTokenFullData(address token) view returns ((string name, string symbol, bytes32 logoHash, string description) core, (string website, string twitter, string telegram, string guild) meta, address creator, uint256[5] stats)",
+                        params: [addr]
+                    }) as any;
+
+                    const addrL = addr.toLowerCase();
+                    const isMig = data[3][0] === 1n || data[3][0] === true;
+                    
+                    metadata[addrL] = {
+                        name: data[0].name,
+                        symbol: data[0].symbol,
+                        logo: data[0].logoHash,
+                        desc: data[0].description,
+                        links: {
+                            website: data[1].website || "",
+                            twitter: data[1].twitter || "",
+                            telegram: data[1].telegram || "",
+                            guild: data[1].guild || ""
+                        },
+                        stats: [
+                            isMig ? "1" : "0",
+                            (data[3][1] === 1n || data[3][1] === true) ? "1" : "0",
+                            data[3][2].toString(),
+                            data[3][3].toString(),
+                            data[3][4].toString()
+                        ],
+                        creator: data[2],
+                        fromGoldsky: false
+                    };
+                } catch (e) {
+                    console.error(`[BatchMeta] Error for ${addr}:`, e);
+                }
+            }));
+            if (i + BATCH_SIZE < addresses.length) await new Promise(r => setTimeout(r, 50));
+        }
+        return metadata;
+    } catch (err) {
+        console.error("[BatchMeta] Critical error:", err);
+        return {};
     }
 }
 
