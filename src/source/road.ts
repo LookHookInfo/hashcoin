@@ -138,15 +138,15 @@ export const roadmapData: RoadmapPhase[] = [
         text: 'New DApps and Features',
         subItems: [
           'Hash Market - event-based prediction and staking market.',
-          'DeVote - governance system for active community members.',
+          'Development of a collateral-backed DeFi stablecoin.',
         ],
       },
       {
-        status: 'partial',
+        status: 'completed',
         text: 'Strategic Ecosystem Products',
         subItems: [
           'Lock-staking with fixed APR and duration.',
-          'Development of a collateral-backed DeFi stablecoin.',
+          'DeVote - governance system for active community members.',
         ],
       },
       {
@@ -158,11 +158,11 @@ export const roadmapData: RoadmapPhase[] = [
         ],
       },
       {
-        status: 'planned',
-        text: 'Global Expansion',
+        status: 'completed',
+        text: 'Global Expansion (launchpad)',
         subItems: [
           'Token Launchpad with NFT-based mining integration.',
-          'Hash Chain - the project’s own blockchain.',
+          'HASH token incentivization for GemFun participants.',
         ],
       },
     ],

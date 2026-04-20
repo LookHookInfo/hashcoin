@@ -44,6 +44,38 @@ a:hover { color: #339AF0; }
   animation: fomo-flash 2s ease-out forwards;
 }
 
+@keyframes tge-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.4), 0 0 10px rgba(0, 210, 255, 0.2);
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.7), 0 0 35px rgba(0, 210, 255, 0.5);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 12px rgba(0, 210, 255, 0.6));
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.4), 0 0 10px rgba(0, 210, 255, 0.2);
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+  }
+}
+
+@keyframes rocket-launch {
+  0% { transform: translateY(0) scale(1); }
+  25% { transform: translateY(-2px) scale(1.05); }
+  50% { transform: translateY(0) scale(1.1); }
+  75% { transform: translateY(2px) scale(1.05); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.tge-glow {
+  animation: tge-glow 2s infinite ease-in-out;
+}
+
+.rocket-animate {
+  animation: rocket-launch 1.5s infinite ease-in-out;
+  display: inline-block;
+}
+
 .gem-card-hover:hover {
     border-color: #228be6 !important;
     transform: translateY(-4px);

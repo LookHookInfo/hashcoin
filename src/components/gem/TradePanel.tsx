@@ -29,6 +29,7 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
   const [tradeAmount, setTradeAmount] = useState('0');
   const [mode, setMode] = useState<'buy' | 'sell'>('buy');
   const [sliderVal, setSliderVal] = useState(0);
+  const [isFlashing, setIsFlashing] = useState(false);
 
   const { data: hashAllowance, refetch: refetchHashAllowance } = useAlchemyReadContract<any, any, any, bigint>({
     queryKey: ['gem-token', 'hash-allowance', account?.address],
@@ -84,12 +85,10 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
   const needsMemeApprove = mode === 'sell' && amountBigInt !== null && (BigInt(memeAllowance || 0n)) < amountBigInt;
   
   const curveProgress = info ? Number(BigInt(info[2]) * 10000n / CURVE_SUPPLY) / 100 : 0;
-  // Trust ONLY the contract state for logic, not local math
   const isCurveCompleted = info?.[1] || false;
   const isMigrated = info?.[0] || false;
   const canMigrate = isCurveCompleted && !isMigrated;
   
-  // Trading is allowed until the contract flag is set OR it is already migrated
   const canSubmitTrade = !!account && !isCurveCompleted && !isMigrated && (mode === 'buy' ? (amountBigInt !== null && amountBigInt > 0n && amountBigInt <= remainingCurveSupply) : (amountBigInt !== null && amountBigInt > 0n && amountBigInt <= (tokenBalance || 0n) && amountBigInt <= soldOnCurve));
 
   const handleConfirmed = () => {
@@ -97,6 +96,10 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
     refetchHashAllowance();
     refetchMemeAllowance();
     onTradeConfirmed?.(address);
+    
+    // Trigger flash effect for attracting attention
+    setIsFlashing(true);
+    setTimeout(() => setIsFlashing(false), 3000);
   };
 
   return (
@@ -170,9 +173,18 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
                     <AppTransactionButton 
                         size="md" 
                         disabled={!canMigrate} 
-                        style={{ background: canMigrate ? 'linear-gradient(45deg, #007bff, #00d2ff)' : 'rgba(255, 255, 255, 0.05)', color: canMigrate ? 'white' : '#666', fontWeight: 700, animation: canMigrate ? 'pulse 2s infinite' : 'none' }} 
-                        leftSection={<IconRocket size={18} />} 
-                        onTransactionConfirmed={refetchPending} 
+                        className={(curveProgress > 50 || isFlashing) ? 'tge-glow' : ''}
+                        style={{ 
+                            background: canMigrate ? 'linear-gradient(45deg, #007bff, #00d2ff)' : 'rgba(255, 255, 255, 0.05)', 
+                            color: (canMigrate || isFlashing) ? 'white' : '#999', 
+                            fontWeight: 700, 
+                            animation: canMigrate ? 'pulse 1s infinite' : ((curveProgress > 80 || isFlashing) ? 'pulse-subtle 2s infinite' : 'none'),
+                            border: (curveProgress > 80 || isFlashing) ? '1px solid rgba(0, 210, 255, 0.8)' : 'none',
+                            boxShadow: isFlashing ? '0 0 15px rgba(0, 210, 255, 0.8)' : undefined,
+                            transition: 'all 0.5s ease'
+                        }} 
+                        leftSection={<IconRocket size={18} className={(curveProgress > 20 || isFlashing) ? 'rocket-animate' : ''} />} 
+                        onTransactionConfirmed={handleConfirmed} 
                         transaction={() => {
                             console.log("Launching TGE for token:", address);
                             return prepareContractCall({ 
