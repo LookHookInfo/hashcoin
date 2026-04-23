@@ -1,8 +1,9 @@
-﻿import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
+import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconPlus, IconSearch, IconTrophy, IconFlame, IconWallet, IconPick, IconRocket } from '@tabler/icons-react';
 import { useState, useMemo, useEffect } from 'react';
-import { useGemFun, type CachedGemTokenMeta } from '@/hooks/useGemFun';
+import { useGemFun } from '@/hooks/useGemFun';
+import { type CachedGemTokenMeta } from '@/services/tokenService';
 import { GemTokenCard } from '@/components/GemTokenCard';
 import { GemTokenDetails } from '@/components/GemTokenDetails';
 import { useActiveAccount } from 'thirdweb/react';
@@ -13,8 +14,6 @@ import { LaunchTokenModal } from '@/components/LaunchTokenModal';
 type FilterType = 'all' | 'hold' | 'mining' | 'migrated';
 
 const TOKENS_PER_PAGE = 20;
-const EMPTY_METADATA: [string, string, string, string, string, string] = ["", "", "", "", "", ""];
-const EMPTY_INFO: [boolean, boolean, bigint, bigint, bigint] = [false, false, 0n, 0n, 0n];
 
 export default function Gem() {
   const account = useActiveAccount();
@@ -27,7 +26,6 @@ export default function Gem() {
   const topMcapTokens = gemData.topMcapTokens || [];
   const isLoading = gemData.isLoading;
   const lists = gemData.lists;
-  const bumpTokenActivity = gemData.bumpTokenActivity;
 
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,7 +34,6 @@ export default function Gem() {
     setCurrentPage(1);
   }, [search, activeFilter]);
 
-  // Списки уже приходят отсортированными по активности из Goldsky + Live
   const filteredAddresses = useMemo(() => {
     let baseList: string[] = [];
     if (activeFilter === 'all') baseList = lists.active;
@@ -92,9 +89,11 @@ export default function Gem() {
                     <Text fw={700} c="white" size="lg">Top Market Cap</Text>
                 </Group>
                 <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-                    {topMcapTokens.map((addr) => (
-                        <TopTokenCard key={addr} address={addr} cachedMeta={tokenIndex[addr.toLowerCase()] || null} onClick={() => setSelectedToken(addr)} />
-                    ))}
+                    {topMcapTokens.map((addr) => {
+                        const meta = tokenIndex[addr.toLowerCase()];
+                        if (!meta) return null;
+                        return <TopTokenCard key={addr} address={addr} cachedMeta={meta} onClick={() => setSelectedToken(addr)} />;
+                    })}
                 </SimpleGrid>
             </Box>
         )}
@@ -135,10 +134,10 @@ export default function Gem() {
             <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing="md">
                 {pageAddresses.map((addr) => {
                     const meta = tokenIndex[addr.toLowerCase()];
-                    if (!meta) return null; // Не рисуем, если нет данных (как в Top Mcap)
+                    if (!meta) return null;
 
-                    const lastActive = gemData.liveActivity[addr.toLowerCase()] || 0;
-                    const isHot = (Date.now() - lastActive) < 15000;
+                    const lastTrade = gemData.tradeActivity[addr.toLowerCase()] || 0;
+                    const isHot = (Date.now() - lastTrade) < 15000;
 
                     return (
                         <GemTokenCard 
@@ -158,7 +157,7 @@ export default function Gem() {
                                 meta.links.website, meta.links.twitter, 
                                 meta.links.telegram, meta.links.guild
                             ]} 
-                            isHot={isHot} 
+                            isHot={isHot}
                         />
                     );
                 })}
@@ -178,51 +177,33 @@ export default function Gem() {
           <GemTokenDetails 
             address={selectedToken} 
             onClose={() => setSelectedToken(null)} 
-            onTradeConfirmed={(addr) => {
-                bumpTokenActivity(addr);
-                setCurrentPage(1);
-            }} 
+            onTradeConfirmed={gemData.refresh} 
           />
         )}
       </Modal>
 
-      <LaunchTokenModal opened={opened} onClose={close} onSuccess={gemData.refreshAll} />
+      <LaunchTokenModal opened={opened} onClose={close} onSuccess={gemData.refresh} />
     </Container>
   );
 }
 
-function TopTokenCard({ cachedMeta, onClick, isActivity, isHot }: { address: string, cachedMeta: CachedGemTokenMeta | null, onClick: () => void, isActivity?: boolean, isHot?: boolean }) {
-    const name = cachedMeta?.name || 'Unnamed';
-    const info = cachedMeta?.stats;
+function TopTokenCard({ cachedMeta, onClick }: { address: string, cachedMeta: CachedGemTokenMeta, onClick: () => void }) {
+    const name = cachedMeta.name || 'Unnamed';
+    const info = cachedMeta.stats;
     const mcap = info ? formatEther(BigInt(info[3])) : '0';
-    const logo = cachedMeta?.logo || "";
-    const color = isActivity ? 'orange' : '#00d2ff';
-    const Icon = isActivity ? IconFlame : IconTrophy;
+    const logo = cachedMeta.logo || "";
 
     return (
-        <Paper p="md" withBorder onClick={onClick} style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: color, cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
-            {isHot && (
-                <Badge 
-                    variant="filled" 
-                    color="red" 
-                    size="xs" 
-                    style={{ position: 'absolute', top: 5, left: 5, zIndex: 2, fontSize: '8px', padding: '0 4px' }}
-                    className="pulse-beta"
-                >
-                    LIVE
-                </Badge>
-            )}
-            <Box style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}><Icon size={80} color={color} /></Box>
+        <Paper p="md" withBorder onClick={onClick} style={{ backgroundColor: 'rgba(255,255,255,0.03)', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+            <Box style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}><IconTrophy size={80} color="gold" /></Box>
             <Group wrap="nowrap">
-                <Box style={{ position: 'relative' }}>
-                    <Box w={60} h={60} style={{ borderRadius: '8px', overflow: 'hidden', backgroundColor: 'black' }}>
-                        <img src={getIpfsUrl(logo) || `https://placehold.co/60x60/202020/white?text=${name?.substring(0,1) || '?'}`} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                    </Box>
+                <Box w={60} h={60} style={{ borderRadius: '8px', overflow: 'hidden', backgroundColor: 'black' }}>
+                    <img src={getIpfsUrl(logo) || ""} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 </Box>
                 <Stack gap={0} flex={1} style={{ minWidth: 0 }}>
                     <Text fw={700} c="white" truncate>{name}</Text>
-                    <Text size="xs" c="dimmed">{isActivity ? 'Recently Traded' : 'Market Cap'}</Text>
-                    <Text fw={700} size="sm" c={isActivity ? 'orange' : 'blue'}>{formatAmount(mcap)} HASH</Text>
+                    <Text size="xs" c="dimmed">Market Cap</Text>
+                    <Text fw={700} size="sm" c="blue">{formatAmount(mcap)} HASH</Text>
                 </Stack>
             </Group>
         </Paper>

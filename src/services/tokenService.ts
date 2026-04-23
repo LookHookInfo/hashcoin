@@ -18,7 +18,7 @@ export const store = {
     listeners: new Set<() => void>(),
 };
 
-export const subscribe = (l: () => void) => { store.listeners.add(l); return () => store.listeners.delete(l); };
+export const subscribe = (l: () => void) => { store.listeners.add(l); return () => { store.listeners.delete(l); }; };
 const notify = () => store.listeners.forEach(l => l());
 
 export async function fetchFromGoldsky(query: string) {
@@ -27,7 +27,7 @@ export async function fetchFromGoldsky(query: string) {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) 
         });
         const json = await response.json();
-        if (json.data?.tokens?.length > 0) return json.data;
+        if (json.data) return json.data;
     } catch (e) {
         console.warn("[TokenService] Goldsky failed, using RPC 3...");
     }
@@ -76,6 +76,7 @@ export async function batchFetchBalances(user: string, addresses: string[]) {
             const batch = addresses.slice(i, i + 10);
             await Promise.all(batch.map(async (addr) => {
                 try {
+                    const addrL = addr.toLowerCase();
                     const data = await alchemyPublicClient3.readContract({
                         address: contractGemFun.address as `0x${string}`,
                         abi: gemfunAbi as Abi,
@@ -83,11 +84,17 @@ export async function batchFetchBalances(user: string, addresses: string[]) {
                         args: [addr as `0x${string}`, user as `0x${string}`]
                     }) as any;
                     const bal = data.walletBalance || data[0] || 0n;
-                    if (bal > 0n) balances[addr.toLowerCase()] = bal;
+                    const hash = data.totalHashrate || data[1] || 0n;
+                    
+                    if (!store.data[addrL]) store.data[addrL] = { stats: [0n, 0n, 0n, 0n, 0n], timestamp: Date.now() };
+                    store.data[addrL].user = { balance: bal, hashrate: hash };
+                    
+                    if (bal > 0n) balances[addrL] = bal;
                 } catch { }
             }));
             await new Promise(r => setTimeout(r, 50));
         }
+        notify();
         return balances;
     } catch (err) { return {}; }
 }
