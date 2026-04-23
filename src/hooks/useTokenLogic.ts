@@ -1,10 +1,11 @@
 import { useActiveAccount } from "thirdweb/react";
-import { contractGemFun, hashcoinContract } from "@/utils/contracts";
+import { contractGemFun, hashcoinContract, GEMFUN_ADDRESS } from "@/utils/contracts";
 import { getContract } from "thirdweb";
 import { client } from "@/lib/thirdweb/client";
 import { chain } from "@/lib/thirdweb/chain";
 import { useMemo } from "react";
 import { useAlchemyReadContract } from "@/hooks/useAlchemyRead";
+import { alchemyPublicClient } from "@/lib/alchemy/client";
 import gemfunAbi from "@/lib/abi/gemfun.json";
 import type { Abi } from "viem";
 import { CURVE_SUPPLY, MINING_RESERVE } from "@/utils/constants";
@@ -170,9 +171,10 @@ export function useTokenLogic(tokenAddress: string) {
 
   const cached = useMemo(() => isAddressValid ? getCachedMeta(tokenAddress) : null, [tokenAddress, isAddressValid]);
 
+  // Вызов автоматически пойдет на RPC 3 благодаря GEMFUN_ADDRESS
   const { data: fullData, isLoading: isLoadingFull, refetch: refetchFull } = useAlchemyReadContract<Abi, "getTokenFullData", readonly [`0x${string}`], FullDataObject | FullDataTuple>({
     queryKey: ["gem-token", "full-data", tokenAddress],
-    address: contractGemFun.address as `0x${string}`,
+    address: GEMFUN_ADDRESS as `0x${string}`,
     abi: gemfunAbi as Abi,
     functionName: "getTokenFullData",
     args: isAddressValid ? [tokenAddress as `0x${string}`] : undefined,
@@ -200,9 +202,10 @@ export function useTokenLogic(tokenAddress: string) {
     staleTime: 10_000,
   });
 
+  // Вызов автоматически пойдет на RPC 3
   const { data: accountData, refetch: refetchAccount } = useAlchemyReadContract<Abi, "getAccountData", readonly [`0x${string}`, `0x${string}`], AccountDataObject | AccountDataTuple>({
     queryKey: ["gem-token", "account-data", tokenAddress, account?.address],
-    address: contractGemFun.address as `0x${string}`,
+    address: GEMFUN_ADDRESS as `0x${string}`,
     abi: gemfunAbi as Abi,
     functionName: "getAccountData",
     args: isAddressValid && account?.address ? [tokenAddress as `0x${string}`, account.address as `0x${string}`] : undefined,

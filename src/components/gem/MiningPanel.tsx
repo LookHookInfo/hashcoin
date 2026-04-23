@@ -9,6 +9,7 @@ import { prepareContractCall, sendAndConfirmTransaction } from 'thirdweb';
 import { contractTools, contractGemFun } from '@/utils/contracts';
 import { client } from "@/lib/thirdweb/client";
 import { useAlchemyReadContract } from '@/hooks/useAlchemyRead';
+import { alchemyPublicClient2, alchemyPublicClient3 } from '@/lib/alchemy/client';
 import { AppTransactionButton } from '../AppTransactionButton';
 import { formatAmount, type UserStake } from '@/hooks/useTokenLogic';
 import { REFRESH_INTERVALS } from '@/utils/constants';
@@ -108,6 +109,7 @@ function GemMiningTool({ nft, tokenAddress, symbol, userStake, onActionConfirmed
     const stakedAmtBigInt = userStake?.amounts ? userStake.amounts[Number(nft.id)] : 0n;
     const stakedAmount = Number(stakedAmtBigInt);
 
+    // Чтение баланса NFT через RPC 2
     const { data: ownedBalance, refetch: refetchOwned } = useAlchemyReadContract<typeof erc1155Abi, "balanceOf", [`0x${string}`, bigint], bigint>({
         queryKey: ['gem-mining-tool', 'owned-balance', account?.address, nft.id.toString()],
         address: contractTools.address as `0x${string}`,
@@ -117,8 +119,10 @@ function GemMiningTool({ nft, tokenAddress, symbol, userStake, onActionConfirmed
         enabled: !!account?.address && isVisible,
         staleTime: 5_000,
         refetchInterval: isVisible ? REFRESH_INTERVALS.DETAIL : 0,
+        overrideClient: alchemyPublicClient2,
     });
 
+    // Проверка аппрува через RPC 2
     const { data: isApproved } = useAlchemyReadContract<typeof erc1155Abi, "isApprovedForAll", [`0x${string}`, `0x${string}`], boolean>({
         queryKey: ['gem-mining-tool', 'is-approved', account?.address],
         address: contractTools.address as `0x${string}`,
@@ -128,8 +132,10 @@ function GemMiningTool({ nft, tokenAddress, symbol, userStake, onActionConfirmed
         enabled: !!account?.address && isVisible,
         staleTime: 5_000,
         refetchInterval: isVisible ? REFRESH_INTERVALS.DETAIL : 0,
+        overrideClient: alchemyPublicClient2,
     });
 
+    // Чтение скоростей через RPC 3
     const { data: rates } = useAlchemyReadContract<typeof gemfunAbi, "rates", [bigint], bigint>({
         queryKey: ['gem-mining-tool', 'rate', nft.id.toString()],
         address: contractGemFun.address as `0x${string}`,
@@ -137,6 +143,7 @@ function GemMiningTool({ nft, tokenAddress, symbol, userStake, onActionConfirmed
         functionName: 'rates',
         args: [BigInt(nft.id)],
         staleTime: Infinity,
+        overrideClient: alchemyPublicClient3,
     });
 
     const speedPerHour = rates ? (Number(formatEther(rates as bigint)) * 60).toFixed(2) : '0.00';
