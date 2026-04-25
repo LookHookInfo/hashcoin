@@ -1,211 +1,114 @@
-import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Badge, Box, Paper, Pagination } from '@mantine/core';
+import { Container, Title, Text, Button, Group, SimpleGrid, Stack, TextInput, Modal, Center, Loader, Box, Pagination } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconPlus, IconSearch, IconTrophy, IconFlame, IconWallet, IconPick, IconRocket } from '@tabler/icons-react';
+import { IconPlus, IconSearch, IconFlame, IconWallet, IconPick, IconRocket } from '@tabler/icons-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useGemFun } from '@/hooks/useGemFun';
-import { type CachedGemTokenMeta } from '@/services/tokenService';
 import { GemTokenCard } from '@/components/GemTokenCard';
 import { GemTokenDetails } from '@/components/GemTokenDetails';
 import { useActiveAccount } from 'thirdweb/react';
-import { formatEther } from 'viem';
-import { formatAmount, getIpfsUrl } from '@/hooks/useTokenLogic';
 import { LaunchTokenModal } from '@/components/LaunchTokenModal';
 
-type FilterType = 'all' | 'hold' | 'mining' | 'migrated';
-
-const TOKENS_PER_PAGE = 20;
+type FilterType = 'active' | 'hold' | 'mining' | 'migrated';
+const TOKENS_PER_PAGE = 30;
 
 export default function Gem() {
   const account = useActiveAccount();
   const [opened, { open, close }] = useDisclosure(false);
   const [search, setSearch] = useState('');
-  const [activeFilter, setFilter] = useState<FilterType>('all');
-
-  const gemData = useGemFun();
-  const tokenIndex = gemData.tokenIndex || {};
-  const topMcapTokens = gemData.topMcapTokens || [];
-  const isLoading = gemData.isLoading;
-  const lists = gemData.lists;
-
-  const [selectedToken, setSelectedToken] = useState<string | null>(null);
+  const [activeFilter, setFilter] = useState<FilterType>('active');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedToken, setSelectedToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, activeFilter]);
+  const { tokenIndex, lists, isLoading, refresh } = useGemFun();
+
+  useEffect(() => { setCurrentPage(1); }, [search, activeFilter]);
 
   const filteredAddresses = useMemo(() => {
-    let baseList: string[] = [];
-    if (activeFilter === 'all') baseList = lists.active;
-    else if (activeFilter === 'hold') baseList = lists.hold;
-    else if (activeFilter === 'mining') baseList = lists.mining;
-    else if (activeFilter === 'migrated') baseList = lists.migrated;
-
+    const baseList = lists[activeFilter] || [];
     if (!search) return baseList;
     const s = search.toLowerCase();
-    return baseList.filter(addr => addr.toLowerCase().includes(s));
-  }, [lists, search, activeFilter]);
+    return baseList.filter(addr => {
+        const meta = tokenIndex[addr];
+        return addr.includes(s) || meta?.name?.toLowerCase().includes(s) || meta?.symbol?.toLowerCase().includes(s);
+    });
+  }, [lists, tokenIndex, search, activeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAddresses.length / TOKENS_PER_PAGE));
-  const pageAddresses = useMemo(() => {
-    const startIndex = (currentPage - 1) * TOKENS_PER_PAGE;
-    return filteredAddresses.slice(startIndex, startIndex + TOKENS_PER_PAGE);
-  }, [filteredAddresses, currentPage]);
+  const pageAddresses = filteredAddresses.slice((currentPage - 1) * TOKENS_PER_PAGE, currentPage * TOKENS_PER_PAGE);
 
   return (
     <Container size="lg" py="xl">
       <Stack gap="xl">
-        <Group justify="space-between" align="flex-end">
+        <Group justify="space-between" align="center">
           <div>
-            <Group gap="xs" align="center">
-              <Title order={1} c="white">GemFun</Title>
-              <Badge variant="filled" color="blue" size="sm" className="pulse-beta">Launchpad</Badge>
-            </Group>
-            <Box maw={600}>
-              <Text c="dimmed">
-                Create and mine your own Gem tokens with HASH.
-                <Text span c="blue.4" fw={500}> Compete for the top spot!</Text>
-              </Text>
-            </Box>
+            <Title order={1} c="white">GemFun</Title>
+            <Text c="dimmed">The most active gems across the network.</Text>
           </div>
-          <Group gap="md">
-            <Button 
-                leftSection={<IconPlus size={20} />} 
-                size="lg" 
-                variant="gradient" 
-                gradient={{ from: 'blue', to: 'cyan' }}
-                onClick={open}
-                disabled={!account}
-            >
-                {account ? "Launch Token" : "Connect Wallet"}
-            </Button>
-          </Group>
+          <Button 
+            leftSection={<IconPlus size={20} />} size="lg" variant="gradient" 
+            gradient={{ from: 'blue', to: 'cyan' }} onClick={open} disabled={!account}
+          >
+            {account ? "Launch Token" : "Connect Wallet"}
+          </Button>
         </Group>
 
-        {!isLoading && topMcapTokens.length > 0 && !search && (
-            <Box>
-                <Group gap="xs" mb="md">
-                    <IconTrophy size={20} color="gold" />
-                    <Text fw={700} c="white" size="lg">Top Market Cap</Text>
-                </Group>
-                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-                    {topMcapTokens.map((addr) => {
-                        const meta = tokenIndex[addr.toLowerCase()];
-                        if (!meta) return null;
-                        return <TopTokenCard key={addr} address={addr} cachedMeta={meta} onClick={() => setSelectedToken(addr)} />;
-                    })}
-                </SimpleGrid>
-            </Box>
-        )}
-
-        <Box mt="md">
-            <Group gap="xl" mb="lg" align="center" wrap="wrap">
-                <Group gap="xs" onClick={() => setFilter('all')} style={{ cursor: 'pointer', opacity: activeFilter === 'all' ? 1 : 0.4, transition: 'all 0.2s ease', borderBottom: activeFilter === 'all' ? '2px solid orange' : '2px solid transparent', paddingBottom: '4px' }}>
-                    <IconFlame size={20} color="orange" />
-                    <Text fw={700} c="white" size="lg">Recently Active</Text>
-                </Group>
-                <Group gap="xs" onClick={() => setFilter('hold')} style={{ cursor: 'pointer', opacity: activeFilter === 'hold' ? 1 : 0.4, transition: 'all 0.2s ease', borderBottom: activeFilter === 'hold' ? '2px solid #228be6' : '2px solid transparent', paddingBottom: '4px' }}>
-                    <IconWallet size={20} color="#00d2ff" />
-                    <Text fw={700} c="white" size="lg">Hold Assets</Text>
-                </Group>
-                <Group gap="xs" onClick={() => setFilter('mining')} style={{ cursor: 'pointer', opacity: activeFilter === 'mining' ? 1 : 0.4, transition: 'all 0.2s ease', borderBottom: activeFilter === 'mining' ? '2px solid #fab005' : '2px solid transparent', paddingBottom: '4px' }}>
-                    <IconPick size={20} color="#00d2ff" />
-                    <Text fw={700} c="white" size="lg">Mining Assets</Text>
-                </Group>
-                <Group gap="xs" onClick={() => setFilter('migrated')} style={{ cursor: 'pointer', opacity: activeFilter === 'migrated' ? 1 : 0.4, transition: 'all 0.2s ease', borderBottom: activeFilter === 'migrated' ? '2px solid #00d2ff' : '2px solid transparent', paddingBottom: '4px' }}>
-                    <IconRocket size={20} color="#00d2ff" />
-                    <Text fw={700} c="white" size="lg">Mining Live</Text>
-                </Group>
+        <Box>
+            <Group gap="xl" mb="lg" wrap="wrap">
+                <FilterTab label="Top Market" icon={<IconFlame size={20} color="orange" />} active={activeFilter === 'active'} onClick={() => setFilter('active')} />
+                <FilterTab label="Hold Assets" icon={<IconWallet size={20} color="#00d2ff" />} active={activeFilter === 'hold'} onClick={() => setFilter('hold')} />
+                <FilterTab label="Mining Assets" icon={<IconPick size={20} color="#fab005" />} active={activeFilter === 'mining'} onClick={() => setFilter('mining')} />
+                <FilterTab label="Mining Live" icon={<IconRocket size={20} color="#40c057" />} active={activeFilter === 'migrated'} onClick={() => setFilter('migrated')} />
             </Group>
 
             <TextInput
-                placeholder="Search by address"
-                size="md"
-                mb="lg"
-                leftSection={<IconSearch size={18} />}
-                value={search}
-                onChange={(e) => setSearch(e.currentTarget.value)}
-                styles={{ input: { backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.1)' } }}
+                placeholder="Search gems..." size="md" mb="xl" leftSection={<IconSearch size={18} />}
+                value={search} onChange={(e) => setSearch(e.currentTarget.value)}
+                styles={{ input: { backgroundColor: 'rgba(255, 255, 255, 0.03)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.05)' } }}
             />
 
             {isLoading ? (
-            <Center py="xl"><Loader color="blue" /></Center>
+                <Center py={100}><Loader color="blue" variant="dots" size="xl" /></Center>
             ) : (
-            <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing="md">
-                {pageAddresses.map((addr) => {
-                    const meta = tokenIndex[addr.toLowerCase()];
-                    if (!meta) return null;
-
-                    const lastTrade = gemData.tradeActivity[addr.toLowerCase()] || 0;
-                    const isHot = (Date.now() - lastTrade) < 15000;
-
-                    return (
-                        <GemTokenCard 
-                            key={addr}
-                            address={addr} 
-                            onClick={() => setSelectedToken(addr)} 
-                            name={meta.name} 
-                            info={[
-                                meta.stats[0] === "1", 
-                                meta.stats[1] === "1", 
-                                BigInt(meta.stats[2]), 
-                                BigInt(meta.stats[3]), 
-                                BigInt(meta.stats[4])
-                            ]} 
-                            metadata={[
-                                meta.logo, meta.desc, 
-                                meta.links.website, meta.links.twitter, 
-                                meta.links.telegram, meta.links.guild
-                            ]} 
-                            isHot={isHot}
-                        />
-                    );
-                })}
-            </SimpleGrid>
-            )}
-            
-            {!isLoading && totalPages > 1 && (
-                <Center mt="xl">
-                    <Pagination total={totalPages} value={currentPage} onChange={setCurrentPage} color="blue" radius="xl" />
-                </Center>
+                <>
+                    <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 5 }} spacing="md">
+                        {pageAddresses.map((addr) => (
+                            <GemTokenCard 
+                                key={addr} address={addr} meta={tokenIndex[addr]} 
+                                onClick={() => setSelectedToken(addr)} 
+                            />
+                        ))}
+                    </SimpleGrid>
+                    
+                    {totalPages > 1 && (
+                        <Center mt={40}>
+                            <Pagination total={totalPages} value={currentPage} onChange={setCurrentPage} color="blue" radius="xl" />
+                        </Center>
+                    )}
+                </>
             )}
         </Box>
       </Stack>
 
-      <Modal opened={!!selectedToken} onClose={() => setSelectedToken(null)} centered size="xl" styles={{ content: { backgroundColor: '#1a1b1e', color: 'white' }, header: { backgroundColor: '#1a1b1e', color: 'white' } }}>
-        {selectedToken && (
-          <GemTokenDetails 
-            address={selectedToken} 
-            onClose={() => setSelectedToken(null)} 
-            onTradeConfirmed={gemData.refresh} 
-          />
-        )}
+      <Modal opened={!!selectedToken} onClose={() => setSelectedToken(null)} centered size="xl" styles={{ content: { backgroundColor: '#1a1b1e', color: 'white' } }}>
+        {selectedToken && <GemTokenDetails address={selectedToken} onClose={() => setSelectedToken(null)} onTradeConfirmed={refresh} />}
       </Modal>
 
-      <LaunchTokenModal opened={opened} onClose={close} onSuccess={gemData.refresh} />
+      <LaunchTokenModal opened={opened} onClose={close} onSuccess={refresh} />
     </Container>
   );
 }
 
-function TopTokenCard({ cachedMeta, onClick }: { address: string, cachedMeta: CachedGemTokenMeta, onClick: () => void }) {
-    const name = cachedMeta.name || 'Unnamed';
-    const info = cachedMeta.stats;
-    const mcap = info ? formatEther(BigInt(info[3])) : '0';
-    const logo = cachedMeta.logo || "";
-
+function FilterTab({ label, icon, active, onClick }: any) {
     return (
-        <Paper p="md" withBorder onClick={onClick} style={{ backgroundColor: 'rgba(255,255,255,0.03)', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
-            <Box style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}><IconTrophy size={80} color="gold" /></Box>
-            <Group wrap="nowrap">
-                <Box w={60} h={60} style={{ borderRadius: '8px', overflow: 'hidden', backgroundColor: 'black' }}>
-                    <img src={getIpfsUrl(logo) || ""} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </Box>
-                <Stack gap={0} flex={1} style={{ minWidth: 0 }}>
-                    <Text fw={700} c="white" truncate>{name}</Text>
-                    <Text size="xs" c="dimmed">Market Cap</Text>
-                    <Text fw={700} size="sm" c="blue">{formatAmount(mcap)} HASH</Text>
-                </Stack>
-            </Group>
-        </Paper>
+        <Group 
+            gap="xs" onClick={onClick} 
+            style={{ 
+                cursor: 'pointer', opacity: active ? 1 : 0.4, transition: '0.2s',
+                borderBottom: active ? '2px solid white' : '2px solid transparent', paddingBottom: 6
+            }}
+        >
+            {icon}
+            <Text fw={700} c="white" size="lg">{label}</Text>
+        </Group>
     );
 }

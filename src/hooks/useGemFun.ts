@@ -1,137 +1,111 @@
 import { useActiveAccount } from "thirdweb/react";
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { fetchFromGoldsky, batchFetchBalances, batchFetchTokenMetadata, store, subscribe } from "@/services/tokenService";
+import { fetchFromGoldsky, batchSyncTokens, store, subscribe, updateTokenActivity, notify } from "@/services/tokenService";
 import { watchContractEvents, prepareEvent } from "thirdweb";
 import { contractGemFun } from "@/utils/contracts";
-import { normalizeMetadata } from "@/hooks/useTokenLogic";
 
 const tradeEvent = prepareEvent({ signature: "event Trade(address indexed token, address indexed user, bool isBuy, uint256 hashAmt, uint256 memeAmt)" });
 
 export function useGemFun() {
     const account = useActiveAccount();
-    const [tokens, setTokens] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    
-    const [globalTradeAddrs, setGlobalTradeAddrs] = useState<string[]>([]);
-    const [sessionTrades, setSessionTrades] = useState<Record<string, number>>({});
     const [syncKey, setSyncKey] = useState(0);
 
     useEffect(() => subscribe(() => setSyncKey(k => k + 1)), []);
 
-    const fetchTokens = useCallback(async (isInitial = false) => {
+    const fetchAllData = useCallback(async (isInitial = false) => {
         if (isInitial) setIsLoading(true);
+        
         try {
-            const userFilter = account?.address ? `, userTrades: trades(where: { user: "${account.address.toLowerCase()}" }, first: 100) { token { id } }` : "";
             const query = `{ 
-                tokens(orderBy: createdAt, orderDirection: desc, first: 100) { 
-                    id name symbol logoHash description website twitter telegram guild sold raised miningReserve isMigrated isCurveCompleted creator createdAt updatedAt 
-                }
-                globalTrades: trades(first: 50, orderBy: timestamp, orderDirection: desc) {
-                    token { id }
-                }
-                ${userFilter}
+                tokenCreateds(first: 200) { token }
+                tokenRemoveds(first: 100) { token }
+                trades(first: 100) { token }
             }`;
             
             const data = await fetchFromGoldsky(query);
-            
-            if (data) {
-                if (data.tokens) setTokens(data.tokens);
+            if (!data) return;
+
+            // Обновляем базу удаленных
+            store.removed = new Set((data.tokenRemoveds || []).map((t: any) => t.token.toLowerCase()));
+
+            const allAddrs = new Set<string>();
+            (data.tokenCreateds || []).forEach((t: any) => { if (t.token) allAddrs.add(t.token.toLowerCase()); });
+            (data.trades || []).forEach((t: any) => { if (t.token) allAddrs.add(t.token.toLowerCase()); });
+
+            const addrList = Array.from(allAddrs);
+            if (addrList.length > 0) {
+                // Синхронизируем статы через Multicall (Market Cap и прочее)
+                await batchSyncTokens(addrList, account?.address);
                 
-                if (data.globalTrades) {
-                    const unique = new Set<string>();
-                    const addrs: string[] = [];
-                    data.globalTrades.forEach((tr: any) => {
-                        const a = tr.token.id.toLowerCase();
-                        if (!unique.has(a)) { unique.add(a); addrs.push(a); }
-                    });
-                    setGlobalTradeAddrs(addrs);
-                }
-
-                const userAddrs: string[] = [];
-                if (data.userTrades) {
-                    data.userTrades.forEach((tr: any) => {
-                        const a = tr.token.id.toLowerCase();
-                        if (!userAddrs.includes(a)) userAddrs.push(a);
+                // Инициализируем активность из истории
+                if (data.trades) {
+                    data.trades.forEach((tr: any, idx: number) => {
+                        updateTokenActivity(tr.token, idx + 1);
                     });
                 }
-
-                const allRelevant = [...new Set([...(data.tokens?.map((t:any)=>t.id.toLowerCase()) || []), ...userAddrs])];
-                if (account?.address) await batchFetchBalances(account.address, allRelevant);
-                await batchFetchTokenMetadata(allRelevant); 
             }
+        } catch (err) {
+            console.error("[useGemFun] Goldsky fetch error:", err);
         } finally {
             if (isInitial) setIsLoading(false);
+            notify();
         }
     }, [account?.address]);
 
     useEffect(() => {
-        fetchTokens(true);
-        const interval = setInterval(() => fetchTokens(false), 45000);
+        fetchAllData(true);
+        const interval = setInterval(() => fetchAllData(false), 60000);
+        
         const unwatch = watchContractEvents({
             contract: contractGemFun,
             events: [tradeEvent],
             onEvents: (events) => {
-                const now = Date.now();
-                setSessionTrades(prev => {
-                    const next = { ...prev };
-                    events.forEach(ev => { next[(ev.args.token as string).toLowerCase()] = now; });
-                    return next;
-                });
-                fetchTokens(false);
+                const now = Date.now() * 1000;
+                events.forEach(ev => updateTokenActivity(ev.args.token as string, now));
+                fetchAllData(false);
             }
         });
         return () => { clearInterval(interval); unwatch(); };
-    }, [fetchTokens]);
+    }, [fetchAllData]);
 
-    const processedData = useMemo(() => {
-        const index: Record<string, any> = {};
-        const allMetadataKeys = new Set([...tokens.map(t => t.id.toLowerCase()), ...Object.keys(store.meta)]);
-        
-        allMetadataKeys.forEach(addr => {
-            const t = tokens.find(tk => tk.id.toLowerCase() === addr);
-            const m = store.meta[addr];
-            if (t) {
-                const [logo, desc, web, tw, tg, guild] = normalizeMetadata(t.logoHash || "", t.description || "", { website: t.website, twitter: t.twitter, telegram: t.telegram, guild: t.guild });
-                index[addr] = { ...t, logo, desc, links: { website: web, twitter: tw, telegram: tg, guild: guild }, stats: [t.isMigrated ? "1" : "0", (t.isCurveCompleted || t.isMigrated) ? "1" : "0", t.sold, t.raised, t.miningReserve] };
-            } else if (m) {
-                index[addr] = { id: addr, name: m.name, symbol: m.symbol, logo: m.logo, desc: m.desc, links: m.links, stats: m.stats, isMigrated: m.stats[0] === "1" };
-            }
-        });
+    const lists = useMemo(() => {
+        const index = store.meta;
+        const allKeys = Object.keys(index).filter(addr => !store.removed.has(addr));
 
-        const activeIds = new Set<string>();
-        const activeList: string[] = [];
+        // ЕДИНАЯ ЛОГИКА СОРТИРОВКИ (Recently Active + Market Cap)
+        const active = allKeys
+            .filter(addr => index[addr]?.stats?.[0] === "0")
+            .sort((a, b) => {
+                const metaA = index[a];
+                const metaB = index[b];
 
-        Object.keys(sessionTrades).sort((a, b) => sessionTrades[b] - sessionTrades[a]).forEach(addr => {
-            if (!activeIds.has(addr) && index[addr] && !index[addr].isMigrated) {
-                activeIds.add(addr); activeList.push(addr);
-            }
-        });
+                // Считаем "горячий вес"
+                // 1. Время последней активности (самый важный фактор)
+                const activityA = metaA.lastActivity || 0;
+                const activityB = metaB.lastActivity || 0;
 
-        globalTradeAddrs.forEach(addr => {
-            if (!activeIds.has(addr) && index[addr] && !index[addr].isMigrated) {
-                activeIds.add(addr); activeList.push(addr);
-            }
-        });
+                // 2. Market Cap как дополнительный фактор закрепления
+                const mcapA = Number(BigInt(metaA.stats[3] || 0) / 1000000000000000n);
+                const mcapB = Number(BigInt(metaB.stats[3] || 0) / 1000000000000000n);
 
-        tokens.forEach(t => {
-            const addr = t.id.toLowerCase();
-            if (!activeIds.has(addr) && !t.isMigrated) {
-                activeIds.add(addr); activeList.push(addr);
-            }
-        });
+                const scoreA = activityA + (mcapA / 1000); // Mcap дает небольшой бонус
+                const scoreB = activityB + (mcapB / 1000);
 
-        const hold = Object.keys(index).filter(addr => (store.data[addr]?.user?.balance || 0n) > 0n);
-        const mining = Object.keys(index).filter(addr => (store.data[addr]?.user?.hashrate || 0n) > 0n);
-        const migrated = tokens.filter(t => t.isMigrated).map(t => t.id.toLowerCase());
-        const topMcap = [...tokens].filter(t => !t.isMigrated).sort((a,b) => BigInt(b.raised || 0) > BigInt(a.raised || 0) ? 1 : -1).slice(0, 3).map(t => t.id.toLowerCase());
+                return scoreB - scoreA;
+            });
 
-        return { 
-            tokenIndex: index, 
-            lists: { active: activeList, migrated, hold, mining },
-            topMcapTokens: topMcap,
-            tradeActivity: sessionTrades
-        };
-    }, [tokens, globalTradeAddrs, sessionTrades, syncKey]);
+        const migrated = allKeys.filter(addr => index[addr]?.stats?.[0] === "1");
+        const hold = allKeys.filter(addr => (store.data[addr]?.user?.balance || 0n) > 0n);
+        const mining = allKeys.filter(addr => (store.data[addr]?.user?.hashrate || 0n) > 0n);
 
-    return { ...processedData, isLoading, refresh: () => fetchTokens(true), bumpTokenActivity: () => {} };
+        return { active, migrated, hold, mining, index };
+    }, [syncKey]);
+
+    return { 
+        tokenIndex: lists.index, 
+        lists: { active: lists.active, migrated: lists.migrated, hold: lists.hold, mining: lists.mining },
+        isLoading, 
+        refresh: () => fetchAllData(true) 
+    };
 }
