@@ -21,7 +21,8 @@ interface Props {
 }
 
 export function GemTokenDetails({ address, onClose, onTradeConfirmed }: Props) {
-  const { account, tokenBalance, name, symbol, info, metadata, pendingRewards, userStake, isLoading, tokenCreator, isCreator, refetchPending } = useTokenLogic(address);
+  const { account, 
+    tokenBalance, name, symbol, info, metadata, pendingRewards, userStake, isLoading, tokenCreator, isCreator, refetchPending } = useTokenLogic(address);
   const { displayName: creatorName } = useDisplayName(tokenCreator);
   const [activeTab, setActiveTab] = useState<string | null>('trade');
   const clipboard = useClipboard({ timeout: 2000 });

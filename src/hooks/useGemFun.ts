@@ -71,33 +71,31 @@ export function useGemFun() {
 
     const lists = useMemo(() => {
         const index = store.meta;
-        const allKeys = Object.keys(index).filter(addr => !store.removed.has(addr));
-
-        // ЕДИНАЯ ЛОГИКА СОРТИРОВКИ (Recently Active + Market Cap)
-        const active = allKeys
-            .filter(addr => index[addr]?.stats?.[0] === "0")
+        
+        // Сортируем все ключи один раз по Market Cap + Activity
+        const sortedAll = Object.keys(index)
+            .filter(addr => !store.removed.has(addr))
             .sort((a, b) => {
                 const metaA = index[a];
                 const metaB = index[b];
 
-                // Считаем "горячий вес"
-                // 1. Время последней активности (самый важный фактор)
+                // 1. Market Cap (основной фактор)
+                const mcapA = BigInt(metaA.stats?.[3] || 0);
+                const mcapB = BigInt(metaB.stats?.[3] || 0);
+
+                if (mcapB !== mcapA) return mcapB > mcapA ? 1 : -1;
+
+                // 2. Время последней активности (второстепенный фактор)
                 const activityA = metaA.lastActivity || 0;
                 const activityB = metaB.lastActivity || 0;
 
-                // 2. Market Cap как дополнительный фактор закрепления
-                const mcapA = Number(BigInt(metaA.stats[3] || 0) / 1000000000000000n);
-                const mcapB = Number(BigInt(metaB.stats[3] || 0) / 1000000000000000n);
-
-                const scoreA = activityA + (mcapA / 1000); // Mcap дает небольшой бонус
-                const scoreB = activityB + (mcapB / 1000);
-
-                return scoreB - scoreA;
+                return activityB - activityA;
             });
 
-        const migrated = allKeys.filter(addr => index[addr]?.stats?.[0] === "1");
-        const hold = allKeys.filter(addr => (store.data[addr]?.user?.balance || 0n) > 0n);
-        const mining = allKeys.filter(addr => (store.data[addr]?.user?.hashrate || 0n) > 0n);
+        const active = sortedAll.filter(addr => index[addr]?.stats?.[0] === "0");
+        const migrated = sortedAll.filter(addr => index[addr]?.stats?.[0] === "1");
+        const hold = sortedAll.filter(addr => (store.data[addr]?.user?.balance || 0n) > 0n);
+        const mining = sortedAll.filter(addr => (store.data[addr]?.user?.hashrate || 0n) > 0n);
 
         return { active, migrated, hold, mining, index };
     }, [syncKey]);

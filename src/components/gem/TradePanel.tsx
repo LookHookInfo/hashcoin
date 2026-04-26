@@ -1,4 +1,4 @@
-import { Stack, Group, Button, Box, Text, TextInput, Slider, Badge, Progress } from '@mantine/core';
+import { Stack, Group, Button, Box, Text, TextInput, Slider, Badge, Progress, Tooltip } from '@mantine/core';
 import { IconRocket } from '@tabler/icons-react';
 import { useState, useEffect, useMemo } from 'react';
 import { formatEther, parseEther } from 'viem';
@@ -170,34 +170,44 @@ export function TradePanel({ address, info, tokenBalance, symbol, account, refet
                     <Progress value={curveProgress} color="blue" size="xl" radius="xl" />
                 </Box>
                 {!isMigrated && (
-                    <AppTransactionButton 
-                        size="md" 
-                        disabled={!canMigrate} 
-                        className={(curveProgress > 50 || isFlashing) ? 'tge-glow' : ''}
-                        style={{ 
-                            background: canMigrate ? 'linear-gradient(45deg, #007bff, #00d2ff)' : 'rgba(255, 255, 255, 0.05)', 
-                            color: (canMigrate || isFlashing) ? 'white' : '#999', 
-                            fontWeight: 700, 
-                            animation: canMigrate ? 'pulse 1s infinite' : ((curveProgress > 80 || isFlashing) ? 'pulse-subtle 2s infinite' : 'none'),
-                            border: (curveProgress > 80 || isFlashing) ? '1px solid rgba(0, 210, 255, 0.8)' : 'none',
-                            boxShadow: isFlashing ? '0 0 15px rgba(0, 210, 255, 0.8)' : undefined,
-                            transition: 'all 0.5s ease'
-                        }} 
-                        leftSection={<IconRocket size={18} className={(curveProgress > 20 || isFlashing) ? 'rocket-animate' : ''} />} 
-                        onTransactionConfirmed={handleConfirmed} 
-                        transaction={() => {
-                            console.log("Launching TGE for token:", address);
-                            return prepareContractCall({ 
-                                contract: contractGemFun, 
-                                method: "function migrate(address tokenAddr)", 
-                                params: [address] 
-                            });
-                        }}
-                    >
-                        TGE
-                    </AppTransactionButton>
+                    <Tooltip label="Eternal Pool on Uniswap" withArrow position="top">
+                        <Box>
+                            <AppTransactionButton 
+                                size="md" 
+                                disabled={!canMigrate} 
+                                className={(curveProgress > 50 || isFlashing) ? 'tge-glow' : ''}
+                                style={{ 
+                                    background: canMigrate ? 'linear-gradient(45deg, #007bff, #00d2ff)' : 'rgba(255, 255, 255, 0.05)', 
+                                    color: (canMigrate || isFlashing) ? 'white' : '#999', 
+                                    fontWeight: 700, 
+                                    animation: canMigrate ? 'pulse 1s infinite' : ((curveProgress > 80 || isFlashing) ? 'pulse-subtle 2s infinite' : 'none'),
+                                    border: (curveProgress > 80 || isFlashing) ? '1px solid rgba(0, 210, 255, 0.8)' : 'none',
+                                    boxShadow: isFlashing ? '0 0 15px rgba(0, 210, 255, 0.8)' : undefined,
+                                    transition: 'all 0.5s ease'
+                                }} 
+                                leftSection={<IconRocket size={18} className={(curveProgress > 20 || isFlashing) ? 'rocket-animate' : ''} />} 
+                                onTransactionConfirmed={handleConfirmed} 
+                                transaction={() => {
+                                    console.log("Launching TGE for token:", address);
+                                    return prepareContractCall({ 
+                                        contract: contractGemFun, 
+                                        method: "function migrate(address tokenAddr)", 
+                                        params: [address] 
+                                    });
+                                }}
+                            >
+                                TGE
+                            </AppTransactionButton>
+                        </Box>
+                    </Tooltip>
                 )}
-                {isMigrated && <Button size="md" disabled variant="outline" color="blue" leftSection={<IconRocket size={18} />}>TGE Live</Button>}
+                {isMigrated && (
+                    <Tooltip label="Eternal Pool on Uniswap" withArrow position="top">
+                        <Box>
+                            <Button size="md" disabled variant="outline" color="blue" leftSection={<IconRocket size={18} />}>TGE Live</Button>
+                        </Box>
+                    </Tooltip>
+                )}
             </Group>
             <Text size="xs" fw={700} c="blue" ta="right" mt={5}>{curveProgress.toFixed(1)}%</Text>
         </Box>
