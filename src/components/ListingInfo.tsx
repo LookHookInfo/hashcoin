@@ -21,6 +21,7 @@ const socialLinks = {
 const exchanges = {
   "Uniswap USDC": "https://app.uniswap.org/explore/pools/base/0x9ab05414f0a3872a78459693f3e3c9ea3f0d6e71",
   "Uniswap ETH": "https://app.uniswap.org/explore/pools/base/0x272ebdef2a48efba45135b9db30fc8d8e51e4bbeb47ba287e8754f1c3f9f4534",
+  "Blynex": "https://blynex.com/spot/HASH_USDT",
 };
 
 const blockExplorers = {
@@ -132,14 +133,6 @@ export function ListingInfo() {
             <Group mb="xl">
                 <Button onClick={handleDownload}>
                   Download Logo 200x200
-                </Button>
-                <Button
-                  component="a"
-                  href="https://drive.google.com/drive/folders/1uStwAUZ2e179CQf9ZPTbVvdDW9DbxjuF?usp=drive_link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Download Banners
                 </Button>
             </Group>
             
