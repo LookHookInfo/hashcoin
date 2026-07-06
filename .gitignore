@@ -1,0 +1,64 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor folders
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Vercel
+.vercel
+.env.vercel.pulled
+
+# TypeScript / Vite
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+vite.config.ts.timestamp-*
+.eslintcache
+
+# Foundry build artifacts
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+contracts/lib/forge-std/
+
+# Environment files — never commit secrets
+.env
+.env.production
+.env.local
+.env.*.local
+.env.*
+contracts/.env
+contracts/.env.deploy
+backend/.env
+
+# Scripts and archives
+contracts/deploy-base.sh
+contracts/transfer-owner.sh
+dist.zip
+
+# Internal Info and Documentation
+info.txt
+HANDOFF.md
+MIGRATION.md
+LOCAL_DEV.md
+DEPLOY_BACK4APP.md
+BACKEND_OPTIMIZATION_PLAN.md
+

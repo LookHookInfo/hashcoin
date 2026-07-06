@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/assets/Hash coin 200.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mining Hash | Decentralized Mining & Staking Platform</title>
+
+    <!-- Eagerly open the TLS connection to the IPFS gateway: every token logo
+         is fetched from gateway.pinata.cloud, which sits behind Cloudflare. On
+         a cold visit this shaves 100-300ms off the very first image fetch.
+         No `crossorigin` attribute on purpose — our <img> tags don't set one
+         either, so this preconnect must stay non-CORS to match. dns-prefetch
+         is kept as a defensive fallback for older browsers that ignore
+         preconnect. Both are pure hints: if the gateway is unreachable
+         nothing breaks — the <img> tags handle errors via onError fallbacks. -->
+    <link rel="preconnect" href="https://gateway.pinata.cloud">
+    <link rel="dns-prefetch" href="https://gateway.pinata.cloud">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Join Mining Hash, an innovative platform built on the Base ecosystem for decentralized mining and staking. Earn $HASH tokens and explore the future of crypto." />
+    <meta name="keywords" content="Mining Hash, HASH token, crypto mining, staking, decentralized finance, DeFi, Base ecosystem, cryptocurrency" />
+    <meta name="author" content="Mining Hash Team" />
+
+    <!-- Open Graph Meta Tags (for social media) -->
+    <meta property="og:title" content="Mining Hash | Decentralized Mining & Staking Platform" />
+    <meta property="og:description" content="Join Mining Hash, an innovative platform for decentralized mining and staking. Earn $HASH tokens and explore the future of crypto." />
+    <meta property="og:image" content="/assets/Hash coin 200.png" />
+    <meta property="og:url" content="https://hashcoin.farm" />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mining Hash | Decentralized Mining & Staking Platform" />
+    <meta name="twitter:description" content="Join Mining Hash, an innovative platform for decentralized mining and staking. Earn $HASH tokens and explore the future of crypto." />
+    <meta name="twitter:image" content="/assets/Hash coin 200.png" />
+
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,81 @@
+[
+	{
+		"inputs": [{"internalType": "address","name": "user","type": "address"}],
+		"name": "getClaimStatus",
+		"outputs": [
+			{"internalType": "bool","name": "canMintRole","type": "bool"},
+			{"internalType": "bool","name": "hasMinted","type": "bool"},
+			{"internalType": "bool","name": "canClaimGalxe","type": "bool"},
+			{"internalType": "bool","name": "hasClaimedGalxe","type": "bool"},
+			{"internalType": "uint256","name": "galxeRewardAmount","type": "uint256"},
+			{"internalType": "uint256","name": "galxeContractHash","type": "uint256"}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getCoinFeed",
+		"outputs": [{"internalType": "uint256","name": "totalSupply","type": "uint256"}],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getShopPrices",
+		"outputs": [{
+			"components": [
+				{"internalType": "uint256","name": "pricePerToken","type": "uint256"},
+				{"internalType": "address","name": "currency","type": "address"},
+				{"internalType": "uint256","name": "supplyClaimed","type": "uint256"},
+				{"internalType": "uint256","name": "maxClaimableSupply","type": "uint256"}
+			],
+			"internalType": "struct CoreAggregator.ToolPrice[6]",
+			"name": "prices",
+			"type": "tuple[6]"
+		}],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [{"internalType": "address","name": "user","type": "address"}],
+		"name": "getShopFeed",
+		"outputs": [{
+			"components": [
+				{"components": [
+					{"internalType": "uint256","name": "balance","type": "uint256"},
+					{"internalType": "uint256","name": "staked","type": "uint256"},
+					{"internalType": "uint256","name": "rewards","type": "uint256"}
+				],"internalType": "struct CoreAggregator.ToolState[6]","name": "tools","type": "tuple[6]"},
+				{"internalType": "bool","name": "isApprovedForStaking","type": "bool"},
+				{"internalType": "uint256","name": "usdcBalance","type": "uint256"},
+				{"internalType": "uint256","name": "usdcAllowance","type": "uint256"},
+				{"internalType": "uint256","name": "hashBalance","type": "uint256"},
+				{"internalType": "bool","name": "canMintFarmRole","type": "bool"},
+				{"internalType": "bool","name": "hasFarmRole","type": "bool"},
+				{"internalType": "uint256","name": "galxeNftBalance","type": "uint256"},
+				{"internalType": "uint256","name": "galxeBadgeBalance","type": "uint256"},
+				{"internalType": "bool","name": "galxeHasClaimed","type": "bool"},
+				{"internalType": "uint256","name": "galxeRewardAmount","type": "uint256"},
+				{"internalType": "string","name": "primaryName","type": "string"},
+				{"internalType": "bool","name": "canClaimGalxe","type": "bool"},
+				{"internalType": "uint256","name": "galxeContractHash","type": "uint256"}
+			],
+			"internalType": "struct CoreAggregator.ShopFeed",
+			"name": "f","type": "tuple"
+		}],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [{"internalType": "address","name": "user","type": "address"}],
+		"name": "getWalletFeed",
+		"outputs": [
+			{"internalType": "uint256","name": "hashBalance","type": "uint256"},
+			{"internalType": "uint256","name": "usdcBalance","type": "uint256"},
+			{"internalType": "string","name": "primaryName","type": "string"}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

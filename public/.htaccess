@@ -1,0 +1,28 @@
+# SPA fallback for Apache / cPanel: every non-existent path serves
+# index.html so React Router can take over (without it, F5 on /gem
+# returns 404 from the host).
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
+
+# Hashed assets (Vite emits content-hashed filenames) can be cached forever.
+<FilesMatch "\.(js|css|woff2|woff|ttf|eot|png|jpg|jpeg|gif|svg|webp|ico)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# index.html must never be cached, otherwise users get stale builds
+# pointing at old hashed assets that no longer exist on disk.
+<FilesMatch "^(index\.html|404\.html)$">
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
+</FilesMatch>
+
+# Gzip / brotli are usually on by default on shared hosts; enable here
+# explicitly in case they aren't.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
