@@ -77,6 +77,7 @@ export function useTokenLogic(tokenAddress: string) {
     const hashBalance = detail?.hashBalance ?? 0n;
     const hashAllowance = detail?.hashAllowance ?? 0n;
     const memeAllowance = detail?.memeAllowance ?? 0n;
+    const toolBalances = detail?.toolBalances ?? [0n, 0n, 0n, 0n, 0n, 0n];
 
     const gv = detail?.gv;
     const ud = detail?.ud;
@@ -138,6 +139,7 @@ export function useTokenLogic(tokenAddress: string) {
         hashAllowance,
         memeAllowance,
         tokenBalance: walletBalance,
+        toolBalances,
         isCreator:
             !!account?.address &&
             !!tokenCreator &&

@@ -1,25 +1,27 @@
-import { Stack, Card, Group, Text, Progress, Title, SimpleGrid, Center, Loader, Pagination, Box } from '@mantine/core';
+import { Stack, Card, Group, Text, Progress, Title, SimpleGrid, Center, Pagination, Box, Button, NumberInput } from '@mantine/core';
 import { IconLock, IconPick, IconBolt } from '@tabler/icons-react';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAccount } from '@/hooks/useAccount';
 import { formatEther } from 'viem';
-import { contractGemFun } from '@/utils/contracts';
+import { contractGemFun, ERC1155_ABI } from '@/utils/contracts';
+import { writeAndWait } from '@/lib/wagmi/tx';
 import { AppTransactionButton } from '../AppTransactionButton';
 import { formatAmount, type UserStake } from '@/hooks/useTokenLogic';
-import { useContractRead } from '@/hooks/useContractRead';
-import { memeClient } from '@/hooks/useAggregatorClient';
-import { erc20Abi } from 'viem';
 import { TOOL_METADATA, CONTRACT_ADDRESSES } from '@/utils/constants';
 
 const TOOLS_PER_PAGE = 20;
 
-export function MiningPanel({ tokenAddress, pendingRewards, userStake, symbol, onActionConfirmed, onStakeConfirmed, onWithdrawConfirmed, onClaimMiningConfirmed, isMigrated, curveProgress, miningReserve, isVisible }: any) {
-  const account = useAccount();
-  const { data: toolBalances, isLoading, refetch: refetchPanel } = useMiningToolBalances(account?.address, isVisible !== false);
+export function MiningPanel({ tokenAddress, pendingRewards, userStake, symbol, toolBalances, onActionConfirmed, onStakeConfirmed, onWithdrawConfirmed, onClaimMiningConfirmed, isMigrated, curveProgress, miningReserve, isVisible }: any) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [stakeQty, setStakeQty] = useState(1);
 
   const anchorRef = useRef<{ pending: bigint; ts: number }>({ pending: 0n, ts: Date.now() });
   const [, setTick] = useState(0);
+
+  const handleActionConfirmed = useCallback(() => {
+    onActionConfirmed?.();
+    setTimeout(() => onActionConfirmed?.(), 2000);
+  }, [onActionConfirmed]);
 
   useEffect(() => {
     anchorRef.current = { pending: pendingRewards ?? 0n, ts: Date.now() };
@@ -42,8 +44,6 @@ export function MiningPanel({ tokenAddress, pendingRewards, userStake, symbol, o
     const startIndex = (currentPage - 1) * TOOLS_PER_PAGE;
     return TOOL_METADATA.slice(startIndex, startIndex + TOOLS_PER_PAGE);
   }, [currentPage]);
-
-  if (isLoading) return <Center py="xl"><Loader color="blue" /></Center>;
 
   return (
     <Stack>
@@ -82,14 +82,31 @@ export function MiningPanel({ tokenAddress, pendingRewards, userStake, symbol, o
                     anchorRef.current = { pending: 0n, ts: Date.now() };
                     setTick((t) => t + 1);
                     if (onClaimMiningConfirmed) onClaimMiningConfirmed();
-                    else onActionConfirmed();
+                    else handleActionConfirmed();
                 }}
             >
                 Claim Rewards
             </AppTransactionButton>
         </Group>
 
-        <Title order={5}>Staking Tools</Title>
+        <Group justify="space-between" align="center">
+            <Title order={5}>Staking Tools</Title>
+            <Group gap="xs" align="center">
+                <Button size="compact-xs" variant="default" onClick={() => setStakeQty(q => Math.max(1, q - 1))}>-</Button>
+                <NumberInput
+                    value={stakeQty}
+                    onChange={(v) => setStakeQty(typeof v === 'number' ? Math.max(1, v) : 1)}
+                    min={1}
+                    max={99}
+                    w={60}
+                    size="xs"
+                    hideControls
+                    styles={{ input: { textAlign: 'center', height: 28, minHeight: 28 } }}
+                />
+                <Button size="compact-xs" variant="default" onClick={() => setStakeQty(q => Math.min(99, q + 1))}>+</Button>
+            </Group>
+        </Group>
+
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             {visibleTools.map((tool) => (
                 <GemMiningTool
@@ -98,11 +115,12 @@ export function MiningPanel({ tokenAddress, pendingRewards, userStake, symbol, o
                     tokenAddress={tokenAddress}
                     symbol={symbol}
                     userStake={userStake}
-                    onActionConfirmed={() => { refetchPanel(); onActionConfirmed(); }}
+                    onActionConfirmed={handleActionConfirmed}
                     onStakeConfirmed={onStakeConfirmed}
                     onWithdrawConfirmed={onWithdrawConfirmed}
                     isMigrated={isMigrated}
-                    panelData={toolBalances}
+                    toolBalances={toolBalances}
+                    stakeQty={stakeQty}
                 />
             ))}
         </SimpleGrid>
@@ -115,31 +133,6 @@ export function MiningPanel({ tokenAddress, pendingRewards, userStake, symbol, o
   );
 }
 
-function useMiningToolBalances(user?: string, enabled = true) {
-    return useContractRead<{ isApproved: boolean; balances: { id: string; balance: string }[] }>({
-        fetchFn: async () => {
-            if (!user) return { isApproved: false, balances: [] };
-            const calls = TOOL_METADATA.map((t) => ({
-                address: CONTRACT_ADDRESSES.TOOLS as `0x${string}`,
-                abi: erc20Abi,
-                functionName: "balanceOf",
-                args: [user as `0x${string}`, BigInt(t.id)],
-            }));
-            const results = await memeClient.multicall({ contracts: calls as any });
-            return {
-                isApproved: false,
-                balances: TOOL_METADATA.map((t, i) => ({
-                    id: String(t.id),
-                    balance: String(BigInt((results[i]?.result as bigint) ?? 0n)),
-                })),
-            };
-        },
-        deps: [user],
-        enabled: !!user && enabled,
-        intervalMs: 15_000,
-    });
-}
-
 interface GemMiningToolProps {
     nft: typeof TOOL_METADATA[number];
     tokenAddress: string;
@@ -149,16 +142,18 @@ interface GemMiningToolProps {
     onStakeConfirmed?: (toolId: string, qty: bigint) => void;
     onWithdrawConfirmed?: (toolId: string, qty: bigint) => void;
     isMigrated: boolean;
-    panelData: { isApproved: boolean; balances: { id: string; balance: string }[] } | undefined;
+    toolBalances: bigint[];
+    stakeQty: number;
 }
 
-function GemMiningTool({ nft, tokenAddress, symbol, userStake, onActionConfirmed, onStakeConfirmed, onWithdrawConfirmed, isMigrated, panelData }: GemMiningToolProps) {
+function GemMiningTool({ nft, tokenAddress, symbol, userStake, onActionConfirmed, onStakeConfirmed, onWithdrawConfirmed, isMigrated, toolBalances, stakeQty }: GemMiningToolProps) {
     const account = useAccount();
     const stakedAmtBigInt = userStake?.amounts ? userStake.amounts[Number(nft.id)] : 0n;
     const stakedAmount = Number(stakedAmtBigInt);
+    const ownedBalance = toolBalances[Number(nft.id)] ?? 0n;
 
-    const ownedBalanceStr = panelData?.balances.find((b) => b.id === String(nft.id))?.balance ?? '0';
-    const ownedBalance = BigInt(ownedBalanceStr);
+    const stakeQtyBigInt = BigInt(Math.min(stakeQty, Number(ownedBalance)));
+    const withdrawQtyBigInt = BigInt(Math.min(stakeQty, stakedAmount));
 
     const canStake = isMigrated && ownedBalance > 0n;
     const canWithdraw = stakedAmount > 0;
@@ -192,32 +187,38 @@ function GemMiningTool({ nft, tokenAddress, symbol, userStake, onActionConfirmed
                     style={{ background: canStake ? 'linear-gradient(45deg, #007bff, #00d2ff)' : 'rgba(255, 255, 255, 0.05)', color: 'white', border: 'none', fontWeight: 600, fontSize: '12px', cursor: canStake ? 'pointer' : 'not-allowed', opacity: canStake ? 1 : 0.3 }}
                     transaction={async () => {
                         if (!account) throw new Error("Connect wallet");
+                        await writeAndWait({
+                            address: CONTRACT_ADDRESSES.TOOLS as `0x${string}`,
+                            abi: ERC1155_ABI,
+                            functionName: "setApprovalForAll",
+                            args: [contractGemFun.address, true],
+                        });
                         return {
                             address: contractGemFun.address,
                             abi: contractGemFun.abi,
                             functionName: "stake",
-                            args: [tokenAddress, BigInt(nft.id), 1n],
+                            args: [tokenAddress, BigInt(nft.id), stakeQtyBigInt],
                         };
                     }}
                     onTransactionConfirmed={() => {
-                        if (onStakeConfirmed) onStakeConfirmed(String(nft.id), 1n);
-                        else onActionConfirmed();
+                        onStakeConfirmed?.(String(nft.id), stakeQtyBigInt);
+                        onActionConfirmed();
                     }}
                     disabled={!canStake}
                 >
-                    Stake
+                    Stake {stakeQty > 1 ? `(${stakeQty})` : ''}
                 </AppTransactionButton>
                 <AppTransactionButton
                     size="xs"
                     style={{ background: canWithdraw ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.02)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.1)', fontWeight: 600, fontSize: '12px', cursor: canWithdraw ? 'pointer' : 'not-allowed', opacity: canWithdraw ? 1 : 0.3 }}
-                    transaction={() => ({ address: contractGemFun.address, abi: contractGemFun.abi, functionName: "withdraw", args: [tokenAddress, BigInt(nft.id), 1n] })}
+                    transaction={() => ({ address: contractGemFun.address, abi: contractGemFun.abi, functionName: "withdraw", args: [tokenAddress, BigInt(nft.id), withdrawQtyBigInt] })}
                     onTransactionConfirmed={() => {
-                        if (onWithdrawConfirmed) onWithdrawConfirmed(String(nft.id), 1n);
-                        else onActionConfirmed();
+                        onWithdrawConfirmed?.(String(nft.id), withdrawQtyBigInt);
+                        onActionConfirmed();
                     }}
                     disabled={!canWithdraw}
                 >
-                    Withdraw
+                    Withdraw {stakeQty > 1 ? `(${Math.min(stakeQty, stakedAmount)})` : ''}
                 </AppTransactionButton>
             </Group>
         </Card>

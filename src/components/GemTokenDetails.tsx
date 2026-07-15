@@ -21,7 +21,7 @@ interface Props {
 
 export function GemTokenDetails({ address, onClose, onTradeConfirmed }: Props) {
   const { account,
-    tokenBalance, hashBalance, hashAllowance, memeAllowance, name, symbol, info, metadata, pendingRewards, userStake, isLoading, tokenCreator, isCreator, refetchPending,
+    tokenBalance, hashBalance, hashAllowance, memeAllowance, name, symbol, info, metadata, pendingRewards, userStake, isLoading, tokenCreator, isCreator, refetchPending, toolBalances,
     onTradeConfirmed: onTradeConfirmedLocal,
     onMetadataConfirmed,
     onStakeConfirmed, onWithdrawConfirmed, onClaimMiningConfirmed,
@@ -75,6 +75,7 @@ export function GemTokenDetails({ address, onClose, onTradeConfirmed }: Props) {
             pendingRewards={pendingRewards}
             userStake={userStake}
             symbol={symbol}
+            toolBalances={toolBalances}
             onActionConfirmed={refetchPending}
             onStakeConfirmed={onStakeConfirmed}
             onWithdrawConfirmed={onWithdrawConfirmed}
