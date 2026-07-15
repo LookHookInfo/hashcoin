@@ -48,6 +48,18 @@ export function parseGemView(raw: any): GemView {
     };
 }
 
+const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
+
+export function isValidGemView(t: GemView): boolean {
+    if (!t.token || t.token.toLowerCase() === ZERO_ADDR) return false;
+    if (!t.name || !t.name.trim()) return false;
+    return true;
+}
+
+export function filterValidTokens(tokens: GemView[]): GemView[] {
+    return tokens.filter(isValidGemView);
+}
+
 function parseUserData(raw: any): UserData {
     return {
         walletBalance: BigInt(raw.walletBalance ?? 0),
@@ -72,7 +84,7 @@ export function useGemFeed(offset: number, limit: number, sort: number, enabled 
                 functionName: "getFeed",
                 args: [BigInt(offset), BigInt(limit), sort],
             });
-            const tokens = (raw[0] ?? []).map(parseGemView);
+            const tokens = filterValidTokens((raw[0] ?? []).map(parseGemView));
             const total = Number(raw[1] ?? 0);
             return { tokens, total };
         },
@@ -91,7 +103,7 @@ export function useGemFeedByMarketCap(offset: number, limit: number, enabled = t
                 functionName: "getFeedByMarketCap",
                 args: [BigInt(offset), BigInt(limit)],
             });
-            const tokens = (raw[0] ?? []).map(parseGemView);
+            const tokens = filterValidTokens((raw[0] ?? []).map(parseGemView));
             const total = Number(raw[1] ?? 0);
             return { tokens, total };
         },
@@ -110,7 +122,7 @@ export function useGemFeedMigrated(offset: number, limit: number, enabled = true
                 functionName: "getFeedMigrated",
                 args: [BigInt(offset), BigInt(limit)],
             });
-            const tokens = (raw[0] ?? []).map(parseGemView);
+            const tokens = filterValidTokens((raw[0] ?? []).map(parseGemView));
             const total = Number(raw[1] ?? 0);
             return { tokens, total };
         },
@@ -130,7 +142,7 @@ export function useGemFeedByHolder(user: string | undefined, offset: number, lim
                 functionName: "getFeedByHolder",
                 args: [user as `0x${string}`, BigInt(offset), BigInt(limit)],
             });
-            const tokens = (raw[0] ?? []).map(parseGemView);
+            const tokens = filterValidTokens((raw[0] ?? []).map(parseGemView));
             const total = Number(raw[1] ?? 0);
             return { tokens, total };
         },
@@ -149,7 +161,7 @@ export function useGemFeedByMiner(user: string | undefined, offset: number, limi
                 functionName: "getFeedByMiner",
                 args: [user as `0x${string}`, BigInt(offset), BigInt(limit)],
             });
-            const tokens = (raw[0] ?? []).map(parseGemView);
+            const tokens = filterValidTokens((raw[0] ?? []).map(parseGemView));
             const total = Number(raw[1] ?? 0);
             return { tokens, total };
         },

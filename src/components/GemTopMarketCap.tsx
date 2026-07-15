@@ -1,7 +1,8 @@
 import { Box, Card, Group, SimpleGrid, Stack, Text, Center, Loader } from '@mantine/core';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { IconTrophy } from '@tabler/icons-react';
 import { useGemFeedByMarketCap } from '@/hooks/useGemAggregator';
+import { useRemovedTokens } from '@/hooks/useRemovedTokens';
 import { getIpfsUrl, calculateCurveProgress } from '@/hooks/useTokenLogic';
 
 interface Props {
@@ -128,7 +129,12 @@ function resolveLogo(t: any): string {
 
 export function GemTopMarketCap({ onSelect }: Props) {
   const { data, isLoading } = useGemFeedByMarketCap(0, 3, true);
-  const items = data?.tokens ?? [];
+  const { data: removedTokens } = useRemovedTokens();
+  const items = useMemo(() => {
+      const list = data?.tokens ?? [];
+      if (!removedTokens || removedTokens.size === 0) return list;
+      return list.filter((t) => !removedTokens.has(t.token.toLowerCase()));
+  }, [data, removedTokens]);
 
   if (!isLoading && items.length === 0) return null;
 

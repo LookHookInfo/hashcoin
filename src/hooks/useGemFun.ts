@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useGemFeed, useGemFeedByMarketCap, useGemFeedMigrated, useGemFeedByHolder, useGemFeedByMiner, type GemView } from "./useGemAggregator";
+import { useRemovedTokens } from "./useRemovedTokens";
 
 export interface GemMetaIndexEntry {
     name: string;
@@ -59,6 +60,7 @@ export function useGemFun({ filter, limit, q, userAddress }: UseGemFunArgs) {
     const feedCreation = useGemFeed(offset, limit, 0, filter !== 'marketcap' && filter !== 'hold' && filter !== 'mining' && filter !== 'migrated');
     const feedHolder = useGemFeedByHolder(isUserFilter ? userAddress : undefined, offset, limit, filter === 'hold');
     const feedMiner = useGemFeedByMiner(isUserFilter ? userAddress : undefined, offset, limit, filter === 'mining');
+    const { data: removedTokens } = useRemovedTokens();
 
     let data: { tokens: GemView[]; total: number } | null | undefined;
     let isLoading: boolean;
@@ -89,15 +91,19 @@ export function useGemFun({ filter, limit, q, userAddress }: UseGemFunArgs) {
     const total = data?.total ?? 0;
 
     const filtered = useMemo(() => {
-        if (!q?.trim()) return tokens;
+        let list = tokens;
+        if (removedTokens && removedTokens.size > 0) {
+            list = list.filter((t) => !removedTokens.has(t.token.toLowerCase()));
+        }
+        if (!q?.trim()) return list;
         const query = q.toLowerCase();
-        return tokens.filter(
+        return list.filter(
             (t) =>
                 t.name.toLowerCase().includes(query) ||
                 t.symbol.toLowerCase().includes(query) ||
                 t.description.toLowerCase().includes(query)
         );
-    }, [tokens, q]);
+    }, [tokens, q, removedTokens]);
 
     const refresh = (() => {
         switch (filter) {
