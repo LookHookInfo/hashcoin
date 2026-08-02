@@ -20,8 +20,7 @@ const socialLinks = {
 
 const exchanges = {
   "Uniswap USDC": "https://app.uniswap.org/explore/pools/base/0x9ab05414f0a3872a78459693f3e3c9ea3f0d6e71",
-  "Uniswap ETH": "https://app.uniswap.org/explore/pools/base/0x272ebdef2a48efba45135b9db30fc8d8e51e4bbeb47ba287e8754f1c3f9f4534",
-  "Blynex": "https://blynex.com/spot/HASH_USDT",
+  "Uniswap ETH": "https://app.uniswap.org/explore/pools/base/0x67d0fc5f92cb8481cfca8900f20ef21627fbe77f24fdb7210640b8ef08eeab72",
 };
 
 const blockExplorers = {
