@@ -19,7 +19,7 @@ const socialLinks = {
 };
 
 const exchanges = {
-  "Uniswap USDC": "https://app.uniswap.org/explore/pools/base/0x9ab05414f0a3872a78459693f3e3c9ea3f0d6e71",
+  "Uniswap USDC": "https://app.uniswap.org/explore/pools/base/0xa975393c7d58e873eb6e23617e6e24b441d156063e4befa4e2042bf019a9ede1",
   "Uniswap ETH": "https://app.uniswap.org/explore/pools/base/0x67d0fc5f92cb8481cfca8900f20ef21627fbe77f24fdb7210640b8ef08eeab72",
 };
 
