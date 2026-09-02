@@ -42,6 +42,26 @@
     }
 }
 
+.footer {
+    background-color: var(--mantine-color-dark-7);
+    border-top: 1px solid var(--mantine-color-dark-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.links {
+    flex-wrap: wrap;
+}
+
 .navLink {
     display: block;
     padding: 8px 12px;

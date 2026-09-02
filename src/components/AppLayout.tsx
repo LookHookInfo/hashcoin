@@ -19,7 +19,7 @@ export function AppLayout() {
    return (
       <AppShell
          header={{ height: 60 }}
-         footer={{ height: { base: 130, md: 70 } }}
+         footer={{ height: { base: 100, md: 80 } }}
          padding="md"
       >
          <AppShell.Header className={classes.header}>
