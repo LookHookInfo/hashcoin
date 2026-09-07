@@ -50,7 +50,7 @@ const apiUrls = {
 const devTeam = "https://lookhook.info";
 
 export function ListingInfo() {
-  const logoUrl = '/assets/Hash coin 200.png';
+  const logoUrl = '/assets/Hashcoin.png';
 
   const handleDownload = () => {
     const link = document.createElement('a');

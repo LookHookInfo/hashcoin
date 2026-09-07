@@ -72,7 +72,7 @@ function CirculatingSupplyDisplay() {
    const circulatingPercentage = totalSupply > 0 ? (circulatingSupply / totalSupply) * 100 : 0;
    const formattingOptions = { minimumFractionDigits: 0, maximumFractionDigits: 0 };
 
-   const coinIcon = '/assets/Hash coin 200.png';
+   const coinIcon = '/assets/Hashcoin.png';
    const projectColors = [
       '#A5D8FF', '#74C0FC', '#4DABF7', '#339AF0', '#228BE6', '#1C7ED6', '#1971C2',
       '#748FFC', '#5C7CFA', '#4C6EF5', '#4263EB', '#3B5BDB', '#364FC7',

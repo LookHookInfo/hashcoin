@@ -107,7 +107,7 @@ function AccountMenu({ account, disconnect }: AccountMenuProps) {
 
          <Menu.Dropdown>
             <Menu.Label>My Balances</Menu.Label>
-            <Menu.Item leftSection={<Image src='/assets/Hash coin 200.png' w={18} h={18} />}>
+            <Menu.Item leftSection={<Image src='/assets/Hashcoin.png' w={18} h={18} />}>
                {isLoadingFeed ? <Skeleton height={16} width={80} radius="sm" /> : `${parseFloat(formatEther(balances?.hashBalance ?? 0n)).toFixed(2)} HASH`}
             </Menu.Item>
             <Menu.Item leftSection={<Image src='/assets/usdc.png' w={18} h={18} />}>
