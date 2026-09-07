@@ -22,6 +22,7 @@ const router = createBrowserRouter([
       { path: "/road", element: <Road /> },
       { path: "/paper", element: <Paper /> },
       { path: "/gem", element: <Gem /> },
+      { path: "/gem/:address", element: <Gem /> },
     ],
   },
 ]);

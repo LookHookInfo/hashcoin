@@ -7,6 +7,10 @@ import { useGemFun, type GemFilter } from '@/hooks/useGemFun';
 import { GemTokenCard } from '@/components/GemTokenCard';
 import { GemTopMarketCap } from '@/components/GemTopMarketCap';
 import { useAccount } from '@/hooks/useAccount';
+import { Helmet } from 'react-helmet-async';
+import { useParams, useNavigate } from 'react-router-dom';
+
+const VALID_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
 
 const GemTokenDetails = lazy(() =>
   import('@/components/GemTokenDetails').then((m) => ({ default: m.GemTokenDetails })),
@@ -25,7 +29,12 @@ export default function Gem() {
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search, 300);
   const [activeFilter, setFilter] = useState<GemFilter>('marketcap');
-  const [selectedToken, setSelectedToken] = useState<string | null>(null);
+
+  const { address: urlAddress } = useParams();
+  const navigate = useNavigate();
+  const selectedToken = urlAddress && VALID_ADDRESS.test(urlAddress) ? urlAddress : null;
+  const openToken = (addr: string) => navigate(`/gem/${addr}`);
+  const closeToken = () => navigate('/gem');
 
   const { tokenIndex, addresses, isLoading, hasMore, isLoadingMore, loadMore, refresh } = useGemFun({
     filter: activeFilter,
@@ -40,6 +49,20 @@ export default function Gem() {
 
   return (
     <Container size="lg" py="xl">
+      <Helmet>
+        {selectedToken ? (
+          <>
+            <title>Token {selectedToken.slice(0, 8)}... | GemFun | Mining Hash</title>
+            <meta name="description" content={`Mining Hash GemFun token at ${selectedToken}. Trade on the bonding curve, complete the curve to migrate, and mine rewards with your hash tools.`} />
+            <link rel="canonical" href={`https://hashcoin.farm/gem/${selectedToken}`} />
+          </>
+        ) : (
+          <>
+            <title>GemFun | Mining Hash</title>
+            <meta name="description" content="Browse, trade and mine the most active GemFun meme tokens on Mining Hash." />
+          </>
+        )}
+      </Helmet>
       <Stack gap="xl">
         <Group justify="space-between" align="center">
           <div>
@@ -55,7 +78,7 @@ export default function Gem() {
         </Group>
 
         <Box>
-            <GemTopMarketCap onSelect={setSelectedToken} />
+            <GemTopMarketCap onSelect={openToken} />
 
             <Group gap="xl" mb="lg" wrap="wrap">
                 <FilterTab label="Top Market Cap" icon={<IconTrendingUp size={20} color="#9775fa" />} active={activeFilter === 'marketcap'} onClick={() => setFilter('marketcap')} />
@@ -78,7 +101,7 @@ export default function Gem() {
                         {addresses.map((addr) => (
                             <GemTokenCard
                                 key={addr} address={addr} meta={tokenIndex[addr]}
-                                onClick={() => setSelectedToken(addr)}
+                                onClick={() => openToken(addr)}
                             />
                         ))}
                     </SimpleGrid>
@@ -98,10 +121,10 @@ export default function Gem() {
         </Box>
       </Stack>
 
-      <Modal opened={!!selectedToken} onClose={() => setSelectedToken(null)} centered size="xl" styles={{ content: { backgroundColor: '#1a1b1e', color: 'white' } }}>
+      <Modal opened={!!selectedToken} onClose={closeToken} centered size="xl" styles={{ content: { backgroundColor: '#1a1b1e', color: 'white' } }}>
         {selectedToken && (
           <Suspense fallback={<Center py={50}><Loader color="blue" /></Center>}>
-            <GemTokenDetails address={selectedToken} onClose={() => setSelectedToken(null)} onTradeConfirmed={handleTradeConfirmed} />
+            <GemTokenDetails address={selectedToken} onClose={closeToken} onTradeConfirmed={handleTradeConfirmed} />
           </Suspense>
         )}
       </Modal>

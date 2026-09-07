@@ -1,5 +1,5 @@
 ﻿import { Modal, Tabs, Stack, Group, Text, Button, Box, ActionIcon, Loader, Center, Tooltip, TextInput } from '@mantine/core';
-import { IconChartLine, IconPick, IconArrowLeft, IconCopy, IconCheck } from '@tabler/icons-react';
+import { IconChartLine, IconPick, IconArrowLeft, IconCopy, IconCheck, IconLink } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { useTokenLogic, getIpfsUrl } from '@/hooks/useTokenLogic';
 import { useClipboard, useDisclosure } from '@mantine/hooks';
@@ -51,11 +51,18 @@ export function GemTokenDetails({ address, onClose, onTradeConfirmed }: Props) {
           <ActionIcon variant="subtle" onClick={onClose} color="gray"><IconArrowLeft size={20} /></ActionIcon>
           <Text fw={700} size="xl" c="white" truncate maw={250}>{name}</Text>
         </Group>
-        <Tooltip label={clipboard.copied ? "Copied!" : "Copy Address"} withArrow>
+        <Group>
+          <Tooltip label={clipboard.copied ? "Copied!" : "Copy Address"} withArrow>
             <Button variant="light" color="blue" size="xs" leftSection={clipboard.copied ? <IconCheck size={14} /> : <IconCopy size={14} />} onClick={() => clipboard.copy(address)}>
                 {address.slice(0, 6)}...{address.slice(-4)}
             </Button>
-        </Tooltip>
+          </Tooltip>
+          <Tooltip label={clipboard.copied ? "Link Copied!" : "Copy Page Link"} withArrow>
+            <Button variant="subtle" color="cyan" size="xs" leftSection={<IconLink size={14} />} onClick={() => clipboard.copy(`${window.location.origin}/gem/${address}`)}>
+                Share
+            </Button>
+          </Tooltip>
+        </Group>
       </Group>
 
       <Tabs value={activeTab} onChange={setActiveTab} color="blue" variant="pills">
