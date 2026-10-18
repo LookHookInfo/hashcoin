@@ -60,6 +60,7 @@ export const HASH_WALLET_ADDRESSES = [
     "0x33de46ccb070936f64fb8bb0fc6c4495a29a4602",
     "0x5ce07c4b826094f932940571512664eed26412f7",
     "0xea4831df95738d6ef0f2b47e5345fa75a2e59e86",
+    "0xe152620357E9cBA90F66fC5855046995e94D0Ec7",
 ];
 
 export const HASH_WALLET_LABELS: Record<string, string> = {
@@ -82,6 +83,7 @@ export const HASH_WALLET_LABELS: Record<string, string> = {
     "0x33de46ccb070936f64fb8bb0fc6c4495a29a4602": "Lambo reward",
     "0x5ce07c4b826094f932940571512664eed26412f7": "Farm Role Award",
     "0xea4831df95738d6ef0f2b47e5345fa75a2e59e86": "GemFun Contract",
+    "0xe152620357e9cba90f66fc5855046995e94d0ec7": "Early Loan",
 };
 
 export const HASH_WALLET_EXPLANATIONS: Record<string, string> = {

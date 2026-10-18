@@ -33,6 +33,10 @@ export default function Footer() {
                >
                   LookHook - Ecosystem
                </Anchor>
+               <Text size="sm" c="dimmed" mx={4}>|</Text>
+               <Anchor href="mailto:admin@lookhook.info" underline="hover" c="dimmed" size="sm">
+                  admin@lookhook.info
+               </Anchor>
             </Group>
          </Container>
       </footer>
