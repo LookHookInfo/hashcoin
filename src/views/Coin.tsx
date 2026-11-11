@@ -6,7 +6,7 @@ import { CardTitle, ContractBox, Page, Subtitle } from '@/components/Page';
 import p from '@/source/coin';
 import { useState, useMemo } from 'react';
 import { Helmet } from "react-helmet-async";
-import { IconShieldCheck, IconCopy, IconCheck } from '@tabler/icons-react';
+import { IconShieldCheck, IconCopy, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import { ListingInfo } from "@/components/ListingInfo";
 import { formatEther } from 'viem';
 import { useCoinFeed } from '@/hooks/useCoreAggregator';
@@ -152,22 +152,37 @@ function CirculatingSupplyDisplay() {
                                        onMouseEnter={() => setHoveredSegment(label)}
                                        onMouseLeave={() => setHoveredSegment(null)}
                                     >
-                                       <Table.Td>
-                                          <Flex align="center" gap="xs">
-                                             <Text size="sm">{label}</Text>
-                                             {data.address && (
-                                                <CopyButton value={data.address} timeout={2000}>
-                                                   {({ copied, copy }) => (
-                                                      <Tooltip label={copied ? 'Copied' : 'Copy address'} withArrow position="right">
-                                                         <ActionIcon variant="subtle" color={copied ? 'teal' : '#A5D8FF'} onClick={copy} size="sm">
-                                                            {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                                                         </ActionIcon>
-                                                      </Tooltip>
-                                                   )}
-                                                </CopyButton>
-                                             )}
-                                          </Flex>
-                                       </Table.Td>
+<Table.Td>
+                                           <Flex align="center" gap="xs">
+                                              <Text size="sm">{label}</Text>
+                                              {data.address && (
+                                                 <CopyButton value={data.address} timeout={2000}>
+                                                    {({ copied, copy }) => (
+                                                       <Tooltip label={copied ? 'Copied' : 'Copy address'} withArrow position="right">
+                                                          <ActionIcon variant="subtle" color={copied ? 'teal' : '#A5D8FF'} onClick={copy} size="sm">
+                                                             {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+                                                          </ActionIcon>
+                                                       </Tooltip>
+                                                    )}
+                                                 </CopyButton>
+                                              )}
+                                              {label === 'Stake Role Award' && (
+                                                 <a
+                                                    href="https://t.me/ChainInside/524/11154"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                                 >
+                                                    <Tooltip label="Broken contract - Galxe" withArrow position="right">
+                                                       <ActionIcon variant="filled" color="red" size="sm">
+                                                          <IconAlertCircle size={14} />
+                                                       </ActionIcon>
+                                                    </Tooltip>
+                                                    <Text size="sm" c="red" fw={700}>Galxe</Text>
+                                                 </a>
+                                              )}
+                                           </Flex>
+                                        </Table.Td>
                                        <Table.Td>{data.balance.toLocaleString('en-US', formattingOptions)}</Table.Td>
                                     </Table.Tr>
                                  );
