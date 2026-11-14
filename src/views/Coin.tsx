@@ -166,21 +166,11 @@ function CirculatingSupplyDisplay() {
                                                     )}
                                                  </CopyButton>
                                               )}
-                                              {label === 'Stake Role Award' && (
-                                                 <a
-                                                    href="https://t.me/ChainInside/524/11154"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                                 >
-                                                    <Tooltip label="Broken contract - Galxe" withArrow position="right">
-                                                       <ActionIcon variant="filled" color="red" size="sm">
-                                                          <IconAlertCircle size={14} />
-                                                       </ActionIcon>
-                                                    </Tooltip>
-                                                    <Text size="sm" c="red" fw={700}>Galxe</Text>
-                                                 </a>
-                                              )}
+                                               {(label === 'Stake Role Award' || label === 'Farm Role Award' || label === 'Vote reward' || label === 'NFT Role Award' || label === 'Name Role Award' || label === 'Welcome Role Award' || label === 'X Role Award') && (
+                                                  <Flex align="center" gap="4px">
+                                                     <Text size="sm" c="red" fw={700}>contract linked to the closed Galxe</Text>
+                                                  </Flex>
+                                               )}
                                            </Flex>
                                         </Table.Td>
                                        <Table.Td>{data.balance.toLocaleString('en-US', formattingOptions)}</Table.Td>
