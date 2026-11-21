@@ -12,7 +12,7 @@ Built by **Look Hook Dev**.
 - Buy 6 tiers of NFT mining tools (GPU, ASIC, FARM, RIG, RACK, CONTAINER)
 - Stake NFTs → passive $HASH mining
 - Unstake and claim rewards
-- Claim Galxe rewards and FarmRole badge
+- Claim NFT role badge (FarmRole)
 
 ### 🪙 Coin (`/coin`)
 - $HASH tokenomics: total supply, circulating supply, distribution

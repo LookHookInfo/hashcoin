@@ -17,13 +17,7 @@ export interface ShopFeed {
     hashBalance: bigint;
     canMintFarmRole: boolean;
     hasFarmRole: boolean;
-    galxeNftBalance: bigint;
-    galxeBadgeBalance: bigint;
-    galxeHasClaimed: boolean;
-    galxeRewardAmount: bigint;
     primaryName: string;
-    canClaimGalxe: boolean;
-    galxeContractHash: bigint;
 }
 
 function parseShopFeed(raw: any): ShopFeed {
@@ -40,13 +34,7 @@ function parseShopFeed(raw: any): ShopFeed {
         hashBalance: BigInt(raw.hashBalance ?? 0),
         canMintFarmRole: raw.canMintFarmRole ?? false,
         hasFarmRole: raw.hasFarmRole ?? false,
-        galxeNftBalance: BigInt(raw.galxeNftBalance ?? 0),
-        galxeBadgeBalance: BigInt(raw.galxeBadgeBalance ?? 0),
-        galxeHasClaimed: raw.galxeHasClaimed ?? false,
-        galxeRewardAmount: BigInt(raw.galxeRewardAmount ?? 0),
         primaryName: raw.primaryName ?? "",
-        canClaimGalxe: raw.canClaimGalxe ?? false,
-        galxeContractHash: BigInt(raw.galxeContractHash ?? 0),
     };
 }
 

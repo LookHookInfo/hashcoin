@@ -1,13 +1,11 @@
-import { Anchor, Button, Center, Container, Flex, Loader, Pagination, SimpleGrid, Title, Tooltip, Text } from "@mantine/core";
+import { Button, Center, Container, Flex, Image, Loader, Pagination, SimpleGrid, Title } from "@mantine/core";
 import { useAccount } from '@/hooks/useAccount';
 import { Helmet } from "react-helmet-async";
-import { formatEther } from "viem";
 import { useState } from "react";
 
 import { contractTools, contractStaking } from "@/utils/contracts";
 import { ToolCard } from "@/components/ToolCard";
 import styles from "./Shop.module.css";
-import { useGalxeRewardClaim } from "@/hooks/useGalxeRewardClaim";
 import { useRoleClaim } from "@/hooks/useRoleClaim";
 import { useShopLogic } from "@/hooks/useShopLogic";
 import type { ShopToolEntry } from "@/hooks/useShopLogic";
@@ -41,7 +39,6 @@ function ShopContent({ address }: { address: string }) {
     } = useShopLogic();
     const [currentPage, setCurrentPage] = useState(1);
 
-    const { canClaim, hasClaimed, isChecking: isCheckingReward, isClaiming: isClaimingReward, claimReward, availableRewardTokens, userRewardAmount } = useGalxeRewardClaim();
     const { canMint, hasMinted, isChecking: isCheckingRole, isMinting, claimRole } = useRoleClaim();
 
     const totalPages = Math.max(1, Math.ceil((tools?.length || 0) / TOKENS_PER_PAGE));
@@ -51,25 +48,12 @@ function ShopContent({ address }: { address: string }) {
         return <Flex justify="center" align="center" h="80vh"><Loader color="blue" variant="dots" size="xl" /></Flex>;
     }
 
-    const rewardTooltipLabel = () => {
-        if (!availableRewardTokens || !userRewardAmount) return <Text>Loading rewards...</Text>;
-        return (
-            <Flex direction="column">
-                <Text>Total Rewards: {parseFloat(formatEther(availableRewardTokens)).toFixed(0)} HASH</Text>
-                <Text>Earn {parseFloat(formatEther(userRewardAmount)).toFixed(0)} HASH on Galxe</Text>
-            </Flex>
-        );
-    }
-
     return (
         <Container fluid>
             <Flex direction="column" gap="xl">
                 <Flex justify="space-between" align="center">
                     <Title order={5} mb="xs">inventory</Title>
                     <Flex gap="md" align="center">
-                        <Anchor href="https://app.galxe.com/quest/bAFdwDecXS6NRWsbYqVAgh/GCbZStYWKo" target="_blank" rel="noopener noreferrer" className={styles.galxeLink}>
-                            Galxe
-                        </Anchor>
                         <Button
                             size="sm" variant="default"
                             className={`${styles.customConnectButton} ${canMint && !hasMinted ? styles.pulsatingGlow : ''}`}
@@ -80,18 +64,19 @@ function ShopContent({ address }: { address: string }) {
                                 <span>{hasMinted ? "Minted" : "Badge"}</span>
                             </Flex>
                         </Button>
-                        <Tooltip label={rewardTooltipLabel()}>
-                            <Button
-                                size="sm" variant="default"
-                                className={`${styles.customConnectButton} ${canClaim ? styles.pulsatingGlow : ''}`}
-                                onClick={claimReward} disabled={isCheckingReward || isClaimingReward || !canClaim}
-                            >
-                                <Flex align="center" justify="center" gap="xs">
-                                    {isClaimingReward && <Loader size="xs" />}
-                                    <span>{hasClaimed ? "Claimed" : "Reward"}</span>
-                                </Flex>
-                            </Button>
-                        </Tooltip>
+                        <Button
+                            component="a"
+                            href="https://app.uniswap.org/explore/pools/base/0x67d0fc5f92cb8481cfca8900f20ef21627fbe77f24fdb7210640b8ef08eeab72"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            size="sm" variant="default"
+                            className={styles.customConnectButton}
+                        >
+                            <Flex align="center" justify="center" gap="xs">
+                                <Image src="/assets/uni.png" w={16} h={16} alt="Uniswap" />
+                                <span>Buy HASH</span>
+                            </Flex>
+                        </Button>
                     </Flex>
                 </Flex>
 
